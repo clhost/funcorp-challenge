@@ -1,0 +1,9 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: memes
+  cloud:
+    consul:
+      host: ${consul.host:localhost}
+      port: ${consul.port:8500}

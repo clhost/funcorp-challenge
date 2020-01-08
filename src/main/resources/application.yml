@@ -1,0 +1,9 @@
+service:
+  vk:
+    app_id: 7271243
+    client_secret: "4oK6WSiUUPpAmONoD2Ut"
+    service_key: "d0e8ee62d0e8ee62d0e8ee6293d0861d29dd0e8d0e8ee628efab6ede38fd80a46681715"
+    memes_count: 10
+    startup_memes_count: 200
+  consul:
+    kv_src: "example/source"
