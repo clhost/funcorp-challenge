@@ -1,6 +1,5 @@
 package com.clhost.memes.consul;
 
-import lombok.Getter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -9,8 +8,7 @@ import org.springframework.cloud.consul.discovery.ConsulDiscoveryProperties;
 import java.util.UUID;
 
 public class InstanceIdBeanPostProcessor implements BeanPostProcessor {
-    @Getter
-    private static final String instanceId = UUID.randomUUID().toString().replace("-", "");
+    public static final String instanceId = UUID.randomUUID().toString().replace("-", "");
 
     @Value("${spring.application.name}")
     private String appName;

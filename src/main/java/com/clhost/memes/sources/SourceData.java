@@ -1,4 +1,4 @@
-package com.clhost.memes.consul;
+package com.clhost.memes.sources;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConsulData {
+public class SourceData {
     private String source;
     private String lang;
     private String type;

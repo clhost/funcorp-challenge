@@ -1,5 +1,8 @@
-package com.clhost.memes.consul;
+package com.clhost.memes.sources.impl;
 
+import com.clhost.memes.consul.InstanceIdBeanPostProcessor;
+import com.clhost.memes.sources.SourceData;
+import com.clhost.memes.sources.SourcesProvider;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.catalog.model.CatalogService;
@@ -18,7 +21,7 @@ import java.util.stream.Collectors;
  * Сортировка: по createIndex'у в Consul'е
  */
 @Service
-public class ConsulInteract {
+public class ConsulSourcesProvider implements SourcesProvider {
     //private static final Logger LOGGER = LoggerFactory.getLogger(ConsulInteract.class);
 
     private final ConsulClient consulClient;
@@ -30,17 +33,18 @@ public class ConsulInteract {
     @Value("${service.consul.kv_src}")
     private String kvSrc;
 
-    private String instanceId = InstanceIdBeanPostProcessor.getInstanceId();
+    private String instanceId = InstanceIdBeanPostProcessor.instanceId;
 
     @Autowired
-    public ConsulInteract(ConsulClient consulClient, ObjectMapper mapper) {
+    public ConsulSourcesProvider(ConsulClient consulClient, ObjectMapper mapper) {
         this.consulClient = consulClient;
         this.mapper = mapper;
     }
 
-    public List<ConsulData> sources() {
+    @Override
+    public List<SourceData> sources() {
         List<CatalogService> services = consulClient.getCatalogService(appName, QueryParams.DEFAULT).getValue();
-        List<ConsulData> sources = sourcesList();
+        List<SourceData> sources = sourcesList();
 
         if (sources.isEmpty()) return sources;
 
@@ -50,13 +54,12 @@ public class ConsulInteract {
         return selectSources(position, servicesCount, sources);
     }
 
-    private static List<ConsulData> selectSources(Integer position, Integer servicesCount, List<ConsulData> sources) {
+    private List<SourceData> selectSources(Integer position, Integer servicesCount, List<SourceData> sources) {
         Integer sourcesCount = sources.size();
-        List<ConsulData> result = new ArrayList<>();
+        List<SourceData> result = new ArrayList<>();
 
-        if (position > servicesCount) throw new IllegalStateException("position > servicesCount");
-        if (sourcesCount == 0) return Collections.emptyList();
-        if (position > sourcesCount) return Collections.emptyList();
+        if (position > servicesCount) throw new IllegalStateException("Consul: position > servicesCount");
+        if (sourcesCount == 0 || position > sourcesCount) return Collections.emptyList();
 
         Integer counter = position;
         while (counter <= sourcesCount) {
@@ -66,7 +69,6 @@ public class ConsulInteract {
         return result;
     }
 
-    // должен отдавать позицию, начиная с 1
     private int position(List<CatalogService> services) {
         List<CatalogService> sortedServices = services.stream()
                 .sorted(Comparator.comparing(CatalogService::getCreateIndex))
@@ -76,21 +78,18 @@ public class ConsulInteract {
                 .filter(s -> s.getServiceId().contains(instanceId))
                 .findFirst();
 
-        if (!first.isPresent()) throw new IllegalStateException("!first.isPresent()"); // подумать чо тут делать
         CatalogService service = first.get();
-
         for (int i = 0; i < sortedServices.size(); i++) {
             if (service.equals(sortedServices.get(i))) return i + 1;
         }
-
-        throw new IllegalStateException("Default end"); // подумать чо тут делать
+        throw new IllegalStateException("Consul: unexpected end of search position");
     }
 
-    private List<ConsulData> sourcesList() {
+    private List<SourceData> sourcesList() {
         try {
             String value = consulClient.getKVValue(kvSrc).getValue().getValue();
             byte[] bytes = Base64.getDecoder().decode(value);
-            return mapper.readValue(bytes, new TypeReference<List<ConsulData>>() {});
+            return mapper.readValue(bytes, new TypeReference<List<SourceData>>() {});
         } catch (IOException e) {
             return Collections.emptyList();
         }
