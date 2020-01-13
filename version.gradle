@@ -1,0 +1,15 @@
+ext {
+    versions = [
+            'springBoot'    : '2.2.2.RELEASE',
+            'springDMP'     : '1.0.8.RELEASE',
+            'springPDP'     : '0.0.9.RELEASE',
+            'springCloud'   : 'Hoxton.SR1',
+            'vkApiSdk'      : '1.0.6',
+            'log4j'         : '2.7',
+            'guava'         : '28.2-jre',
+            'jvptree'       : '0.2',
+            'minio'         : '6.0.11',
+            'jImage'        : '3.0.0',
+            'commonsImage'  : '1.0-alpha1'
+    ]
+}

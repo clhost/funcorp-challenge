@@ -1,93 +1,184 @@
-plugins {
-    id 'org.springframework.boot' version '2.2.2.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
-    id 'java'
-}
+buildscript {
+    apply from: 'version.gradle'
 
-group = 'com.clhost'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '1.8'
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url "https://jitpack.io" }
+        maven { url "https://dl.bintray.com/whyoleg/ktd" }
+    }
 
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${versions.springBoot}")
+        classpath("io.spring.gradle:dependency-management-plugin:${versions.springDMP}")
     }
 }
 
-repositories {
-    mavenCentral()
-    jcenter()
-    maven { url "https://jitpack.io" }
-    maven { url "https://dl.bintray.com/whyoleg/ktd" }
-}
+allprojects {
+    project.version = rootProject.version
 
-ext {
-    set('springCloudVersion', "Hoxton.SR1")
-}
-
-dependencies {
-    implementation ('org.springframework.boot:spring-boot-starter-web') {
-        exclude module : 'spring-boot-starter-logging'
-
-    }
-
-    implementation ('org.springframework.cloud:spring-cloud-starter-openfeign') {
-        exclude module : 'spring-boot-starter-logging'
-    }
-
-    compile ('org.springframework.cloud:spring-cloud-starter-consul-discovery') {
-        exclude module : 'spring-boot-starter-logging'
-    }
-
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    testImplementation('org.springframework.boot:spring-boot-starter-test') {
-        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-        exclude module : 'spring-boot-starter-logging'
-    }
-
-    compile 'com.github.kilianB:JImageHash:3.0.0'
-
-    // social
-    compile 'com.vk.api:sdk:1.0.6'
-    implementation files('libs/Java-TDLib.jar')
-
-    // Binding for Log4J -->
-	// Log4j API and Core implementation required for binding
-    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.7'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.7'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
-
-    // redis
-    compile ('org.springframework.data:spring-data-redis')
-    compile ('redis.clients:jedis:3.0.1')
-}
-
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url "https://jitpack.io" }
+        maven { url "https://dl.bintray.com/whyoleg/ktd" }
     }
 }
 
-/*test {
-    useJUnitPlatform()
-}*/
+subprojects {
+    apply plugin: 'io.spring.dependency-management'
 
-task downloadTdLibzip {
-    doLast {
-        ant.unzip(src: 'td-src/tdlib.zip', dest: 'tdlib/')
+    dependencyManagement {
+        imports {
+            mavenBom("org.springframework.boot:spring-boot-dependencies:${versions.springBoot}")
+            mavenBom("org.springframework.cloud:spring-cloud-dependencies:${versions.springCloud}")
+        }
+
+        dependencies {
+            dependency("com.vk.api:sdk:${versions.vkApiSdk}")
+            dependency("org.apache.logging.log4j:log4j-slf4j-impl:${versions.log4j}")
+            dependency("org.apache.logging.log4j:log4j-api:${versions.log4j}")
+            dependency("org.apache.logging.log4j:log4j-core:${versions.log4j}")
+            dependency("com.google.guava:guava:${versions.guava}")
+            dependency("com.github.kilianB:JImageHash:${versions.jImage}")
+            dependency("io.minio:minio:${versions.minio}")
+            dependency("com.eatthepath:jvptree:${versions.jvptree}")
+            dependency("org.apache.commons:commons-imaging:${versions.commonsImage}")
+        }
+    }
+
+    task cleanOut {
+        delete "${projectDir}/out"
     }
 }
 
-task copyNativeLibs(type: Copy) {
-    dependsOn downloadTdLibzip
-    from "tdlib/libtd/src/main/libs"
-    into "libs"
+configure(subprojects) {
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'idea'
+    apply plugin: 'java'
+
+    group = 'com.clhost.memes'
+
+    idea.module {
+        name = "${project.parent.name}-${project.name}"
+    }
+
+    def commonCompilerArgs =
+            ["-parameters", "-Xlint:serial", "-Xlint:cast", "-Xlint:dep-ann",
+             "-Xlint:divzero", "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides",
+             "-Xlint:path", "-Xlint:-processing", "-Xlint:static", "-Xlint:try", "-Xlint:-options"]
+
+    compileJava.options*.compilerArgs = commonCompilerArgs +
+            ["-Xlint:varargs", "-Xlint:fallthrough",
+             "-Xlint:deprecation", "-Xlint:unchecked"]
+
+    compileTestJava.options*.compilerArgs = commonCompilerArgs +
+            ["-Xlint:-varargs", "-Xlint:-fallthrough", "-Xlint:-rawtypes",
+             "-Xlint:-deprecation", "-Xlint:-unchecked"]
+
+    compileJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        options.encoding = 'UTF-8'
+    }
+
+    compileTestJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        options.encoding = 'UTF-8'
+        options.compilerArgs += "-parameters"
+    }
+
+    jar.baseName = "${project.parent.name}-${project.name}"
 }
 
-task copyJavaSources(type: Copy) {
-    dependsOn downloadTdLibzip
-    from "tdlib/libtd/src/main/java/org/drinkless/td"
-    into "src/main/java/org/drinkless/td"
+configure(project('app')) {
+    dependencies {
+        implementation('org.springframework.boot:spring-boot-starter-web') {
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation('org.springframework.cloud:spring-cloud-starter-openfeign') {
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation('org.springframework.cloud:spring-cloud-starter-consul-discovery') {
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation('org.projectlombok:lombok')
+        annotationProcessor('org.projectlombok:lombok')
+
+        testImplementation('org.springframework.boot:spring-boot-starter-test') {
+            exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        // social
+        implementation("com.vk.api:sdk")
+
+        // logger
+        implementation("org.apache.logging.log4j:log4j-slf4j-impl")
+        implementation("org.apache.logging.log4j:log4j-api")
+        implementation("org.apache.logging.log4j:log4j-core")
+        implementation('org.springframework.boot:spring-boot-starter-log4j2')
+
+        // hazelcast
+        implementation('com.hazelcast:hazelcast')
+        implementation('com.hazelcast:hazelcast-client')
+        implementation('com.hazelcast:hazelcast-spring')
+
+        // image processing
+        implementation("com.github.kilianB:JImageHash")
+        implementation("org.apache.commons:commons-imaging")
+
+        implementation("com.google.guava:guava")
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+configure(project('tree')) {
+    dependencies {
+        implementation('org.springframework.boot:spring-boot-starter-web') {
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation('org.springframework.cloud:spring-cloud-starter-openfeign') {
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation('org.springframework.cloud:spring-cloud-starter-consul-discovery') {
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+
+        testImplementation('org.springframework.boot:spring-boot-starter-test') {
+            exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+            exclude module: 'spring-boot-starter-logging'
+        }
+
+        implementation('org.springframework.boot:spring-boot-starter-log4j2')
+
+        // image processing
+        implementation("com.github.kilianB:JImageHash")
+        implementation("org.apache.commons:commons-imaging")
+
+        // m-tree
+        implementation("com.eatthepath:jvptree")
+
+        // image storage client
+        implementation("io.minio:minio")
+
+        // jdbc
+        implementation('org.springframework.data:spring-data-jdbc')
+    }
+
+    test {
+        useJUnitPlatform()
+    }
 }
