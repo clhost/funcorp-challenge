@@ -44,6 +44,7 @@ subprojects {
             dependency("io.minio:minio:${versions.minio}")
             dependency("com.eatthepath:jvptree:${versions.jvptree}")
             dependency("org.apache.commons:commons-imaging:${versions.commonsImage}")
+            dependency("com.zaxxer:HikariCP:${versions.hikariCP}")
         }
     }
 
@@ -124,15 +125,22 @@ configure(project('app')) {
         implementation('org.springframework.boot:spring-boot-starter-log4j2')
 
         // hazelcast
-        implementation('com.hazelcast:hazelcast')
+        /*implementation('com.hazelcast:hazelcast')
         implementation('com.hazelcast:hazelcast-client')
-        implementation('com.hazelcast:hazelcast-spring')
+        implementation('com.hazelcast:hazelcast-spring')*/
 
         // image processing
         implementation("com.github.kilianB:JImageHash")
         implementation("org.apache.commons:commons-imaging")
 
         implementation("com.google.guava:guava")
+
+        //implementation(project(":tree"))
+        implementation('org.springframework.boot:spring-boot-autoconfigure')
+
+        implementation('org.springframework.boot:spring-boot-starter-actuator') {
+            exclude module: 'spring-boot-starter-logging'
+        }
     }
 
     test {
@@ -176,6 +184,12 @@ configure(project('tree')) {
 
         // jdbc
         implementation('org.springframework.data:spring-data-jdbc')
+        implementation('org.postgresql:postgresql')
+        implementation('com.zaxxer:HikariCP')
+
+        implementation('org.springframework.boot:spring-boot-starter-actuator') {
+            exclude module: 'spring-boot-starter-logging'
+        }
     }
 
     test {

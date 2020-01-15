@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: vp-tree
+  cloud:
+    consul:
+      host: ${consul.host:localhost}
+      port: ${consul.port:8500}

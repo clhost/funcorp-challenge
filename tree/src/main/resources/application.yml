@@ -1,0 +1,34 @@
+server:
+  port: 8090
+  address: 0.0.0.0
+spring:
+  application:
+    name: vp-tree
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 4
+      maximum-pool-size: 20
+      pool-name: "treePool"
+      auto-commit: true
+      connection-timeout: 20000
+      allow-pool-suspension: false
+    driver-class-name: org.postgresql.Driver
+    jdbcUrl: jdbc:postgresql://localhost:32769/docker #${datasource.url}
+    username: docker #${datasource.username}
+    password: docker #${datasource.password}
+service:
+  tree:
+    count_of_hashes: 1000
+    tree_max_count: 10000
+    bit_resolution: 512
+    duplicate_threshold: 0.2
+    cleared_percentage: 0.25
+    bucket_duplicate_threshold: 0.6
+  minio:
+    endpoint: localhost
+    port: 9000
+    access_key: "AKIAIOSFODNN7EXAMPLE"
+    secret_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    bucket_name: memes_bucket
+  queue_capacity: 1000

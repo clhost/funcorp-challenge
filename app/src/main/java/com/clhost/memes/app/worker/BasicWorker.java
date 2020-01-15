@@ -1,10 +1,11 @@
 package com.clhost.memes.app.worker;
 
-import com.clhost.memes.app.cache.CacheInteract;
 import com.clhost.memes.app.data.MemeBucket;
 import com.clhost.memes.app.integration.MemeLoader;
 import com.clhost.memes.app.sources.SourceData;
 import com.clhost.memes.app.sources.SourcesProvider;
+import com.clhost.memes.app.tree.MetaMeme;
+import com.clhost.memes.app.tree.TreeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 @Service
@@ -21,19 +24,20 @@ public class BasicWorker {
     private static final Logger LOGGER = LogManager.getLogger(BasicWorker.class);
 
     private final SourcesProvider sourcesProvider;
-    private final CacheInteract cacheInteract;
     private final List<MemeLoader> memeLoaders;
-    private final ImageWorker imageWorker;
+
+    private final TreeClient treeClient;
+    private final ExecutorService executor;
+    private final HashProvider hashProvider;
 
     @Autowired
-    public BasicWorker(SourcesProvider sourcesProvider,
-                       CacheInteract cacheInteract,
-                       List<MemeLoader> memeLoaders,
-                       ImageWorker imageWorker) {
+    public BasicWorker(SourcesProvider sourcesProvider, List<MemeLoader> memeLoaders,
+                       TreeClient treeClient, HashProvider hashProvider) {
         this.sourcesProvider = sourcesProvider;
-        this.cacheInteract = cacheInteract;
         this.memeLoaders = memeLoaders;
-        this.imageWorker = imageWorker;
+        this.treeClient = treeClient;
+        this.hashProvider = hashProvider;
+        this.executor = Executors.newCachedThreadPool();
     }
 
     @Scheduled
@@ -49,7 +53,7 @@ public class BasicWorker {
             MemeLoader loader = memeLoader(source);
             if (loader == null) continue;
 
-            boolean isExists = cacheInteract.atLeastOneBucketExistsBySource(source.sourceDesc());
+            boolean isExists = false; // cacheInteract.atLeastOneBucketExistsBySource(source.sourceDesc());
             if (isExists) {
                 Future<List<MemeBucket>> future = loader.onRegular(source);
                 fromAllSources.add(future);
@@ -67,7 +71,8 @@ public class BasicWorker {
         while (!fromAllSources.isEmpty()) {
             Future<List<MemeBucket>> future = fromAllSources.get(index);
             if (future.isDone()) {
-                imageWorker.processWithBucketsAsync(future.get());
+                List<MemeBucket> memeBuckets = future.get();
+                executor.execute(() -> process(memeBuckets));
                 fromAllSources.remove(index);
                 index = 0;
             } else {
@@ -81,5 +86,18 @@ public class BasicWorker {
         return memeLoaders.stream()
                 .filter(memeLoader -> memeLoader.isAccepted(sourceData))
                 .findAny().orElse(null);
+    }
+
+    private void process(List<MemeBucket> buckets) {
+        buckets.forEach(bucket -> treeClient.putAsync(map(bucket)));
+    }
+
+    private MetaMeme map(MemeBucket bucket) {
+        return MetaMeme.builder()
+                .bucketId(hashProvider.hash(bucket.getUrls()))
+                .lang(bucket.getLang())
+                .source(bucket.getSource())
+                .urls(bucket.getUrls())
+                .build();
     }
 }

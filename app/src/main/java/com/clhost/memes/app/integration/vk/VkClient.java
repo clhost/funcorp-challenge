@@ -1,7 +1,6 @@
 package com.clhost.memes.app.integration.vk;
 
 import com.clhost.memes.app.data.MemeBucket;
-import com.clhost.memes.app.data.MemeData;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;
 import com.vk.api.sdk.exceptions.ApiException;
@@ -21,22 +20,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// не умеет читать посты с несколькими мемами
 @Service
 public class VkClient {
-
-    @Value("${service.vk.app_id}")
-    private Integer appId = 7271243;
-
-    @Value("${service.vk.client_secret}")
-    private String clientSecret = "4oK6WSiUUPpAmONoD2Ut";
-
-    @Value("${service.vk.service_key}")
-    private String serviceKey = "d0e8ee62d0e8ee62d0e8ee6293d0861d29dd0e8d0e8ee628efab6ede38fd80a46681715";
 
     private final VkApiClient vkApiClient;
     private final ServiceActor actor;
 
-    public VkClient() {
+    public VkClient(@Value("${service.vk.app_id}") int appId,
+                    @Value("${service.vk.client_secret}") String clientSecret,
+                    @Value("${service.vk.service_key}") String serviceKey) {
         this.vkApiClient = new VkApiClient(HttpTransportClient.getInstance());
         this.actor = new ServiceActor(appId, clientSecret, serviceKey);
     }
@@ -64,7 +57,7 @@ public class VkClient {
 
         return attachments.stream()
                 .map(this::map)
-                .filter(data -> data.getId() != null) // грязный костыль, подумать как переделать
+                .filter(data -> !data.isEmpty())
                 .collect(Collectors.toList());
     }
 
@@ -76,24 +69,19 @@ public class VkClient {
         if (photos.isEmpty()) return MemeBucket.builder().build();
 
         Photo photo = photos.get(0); // первая фотка (для синглов должно быть норм, а мультиаттачи потом запилю)
-        MemeData data = detectMaxSizePhotoAndGetVkData(photo);
+        String url = detectMaxSizePhotoAndGetUrlOfMeme(photo);
 
         return MemeBucket.builder()
-                .id(attachments.id)
-                .data(Collections.singletonList(data))
+                .urls(Collections.singletonList(url))
                 .build();
     }
 
-    private MemeData detectMaxSizePhotoAndGetVkData(Photo photo) {
+    private String detectMaxSizePhotoAndGetUrlOfMeme(Photo photo) {
         List<PhotoSizes> sizes = photo.getSizes();
         PhotoSizes size = sizes.stream()
                 .max(this::compareSizes)
                 .get(); // of course, present
-        return MemeData.builder()
-                .id(String.valueOf(photo.getId()))
-                .date(photo.getDate())
-                .url(size.getUrl().toString())
-                .build();
+        return size.getUrl().toString();
     }
 
     private int compareSizes(PhotoSizes size1, PhotoSizes size2) {

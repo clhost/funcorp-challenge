@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,42 +24,49 @@ import java.util.stream.Collectors;
 @Service
 public class VPTreeService implements VPTreeInterface {
 
-    @Value("${}")
+    @Value("${service.tree.count_of_hashes}")
     private Long countOfHashes;
 
-    @Value("${}")
-    private Long treePointsThreshold;
+    @Value("${service.tree.tree_max_count}")
+    private Long treeMaxCount;
 
-    @Value("${}")
-    public int bitResolution;
+    @Value("${service.tree.duplicate_threshold}")
+    private double duplicateThreshold;
 
-    @Value("${}")
-    public double duplicateThreshold;
-
-    @Value("${}")
+    @Value("${service.tree.cleared_percentage}")
     private double clearedPercentage;
 
     private VPTree<VPTreeNode, VPTreeNode> tree;
+
     private final MemesDao dao;
     private final int algorithmId;
-    private final int clearedPointsCount;
+
+    private int bitResolution;
+    private int clearedPointsCount;
 
     @Autowired
-    public VPTreeService(MemesDao dao) {
+    public VPTreeService(MemesDao dao, @Value("${service.tree.bit_resolution}") int bitResolution) {
         this.dao = dao;
+        this.bitResolution = bitResolution;
         this.tree = new VPTree<>(distanceFunction(), strategy(), loadLastNHashes());
         this.algorithmId = new PerceptiveHash(bitResolution).algorithmId();
+    }
+
+    @PostConstruct
+    public void post() {
         this.clearedPointsCount = clearedPointsCount();
     }
 
     @Override
     public boolean isDuplicate(VPTreeNode node) {
-        return tree.getAllWithinDistance(node, duplicateThreshold).size() > 0;
+        List<VPTreeNode> nodes = tree.getAllWithinDistance(node, duplicateThreshold);
+        return nodes != null && nodes.size() > 0;
     }
 
     @Override
     public void put(VPTreeNode node) {
         if (isThresholdExceeded()) releaseSomeMemory();
+        System.out.println("Put node=" + node);
         tree.add(node);
     }
 
@@ -69,6 +78,7 @@ public class VPTreeService implements VPTreeInterface {
 
     // very expensive operation ? (кажется это какая-то хуйня)
     private void releaseSomeMemory() {
+        System.err.println("Memory released");
         List<VPTreeNode> nodes = tree.stream()
                 .sorted(Comparator.comparing(VPTreeNode::getDate))
                 .skip(clearedPointsCount)
@@ -77,13 +87,15 @@ public class VPTreeService implements VPTreeInterface {
     }
 
     private boolean isThresholdExceeded() {
-        return tree.size() >= treePointsThreshold;
+        return tree.size() >= treeMaxCount;
     }
 
     private List<VPTreeNode> loadLastNHashes() {
-        return dao.lastNodes(countOfHashes).stream()
-                .map(this::mapNode)
-                .collect(Collectors.toList());
+        /*List<VPTreeDaoNode> nodes = dao.lastNodes(countOfHashes);
+        return nodes == null
+                ? new ArrayList<>()
+                : nodes.stream().map(this::mapNode).collect(Collectors.toList());*/
+        return new ArrayList<>();
     }
 
     private DistanceFunction<VPTreeNode> distanceFunction() {
@@ -97,11 +109,11 @@ public class VPTreeService implements VPTreeInterface {
     private VPTreeNode mapNode(VPTreeDaoNode node) {
         return new VPTreeNode(
                 new Hash(BigInteger.valueOf(Long.parseLong(node.getHash())),
-                bitResolution, algorithmId), node.getDate());
+                        bitResolution, algorithmId), node.getDate());
     }
 
     private int clearedPointsCount() {
         clearedPercentage = clearedPercentage < 1.0d ? clearedPercentage : 0.2d;
-        return (int) (treePointsThreshold * clearedPercentage);
+        return (int) (treeMaxCount * clearedPercentage);
     }
 }

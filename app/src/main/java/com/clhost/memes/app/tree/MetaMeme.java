@@ -1,16 +1,12 @@
-package com.clhost.memes.tree.data;
+package com.clhost.memes.app.tree;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 import java.util.List;
 
 @Data
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder
 public class MetaMeme {
     private String lang;
     private String source;

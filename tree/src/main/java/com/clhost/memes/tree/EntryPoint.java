@@ -1,6 +1,5 @@
 package com.clhost.memes.tree;
 
-import com.clhost.memes.tree.data.CompleteMeme;
 import com.clhost.memes.tree.data.MetaMeme;
 import com.clhost.memes.tree.vp.VPTreeNode;
 import com.clhost.memes.tree.vp.VPTreeService;
@@ -9,7 +8,6 @@ import com.github.kilianB.hashAlgorithms.HashingAlgorithm;
 import com.github.kilianB.hashAlgorithms.PerceptiveHash;
 import io.minio.MinioClient;
 import lombok.AllArgsConstructor;
-import org.apache.commons.imaging.Imaging;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -38,20 +37,19 @@ public class EntryPoint {
     private final HashingAlgorithm algorithm;
     private final HashProvider hashProvider;
 
-    @Value("${}")
-    public int bitResolution;
+    @Value("${service.tree.bucket_duplicate_threshold}")
+    private double bucketDuplicateThreshold;
 
-    @Value("${}")
-    public double bucketMemesThreshold;
+    @Value("${service.minio.bucket_name}")
+    private String minioBucketName;
 
-    @Value("${}")
-    public String minioBucketName;
-
-    @Value("${}")
-    public String minioEndpoint;
+    @Value("${service.minio.endpoint}")
+    private String minioEndpoint;
 
     @Autowired
-    public EntryPoint(VPTreeService treeService, MemesDao dao, MinioClient minioClient, HashProvider hashProvider) {
+    public EntryPoint(VPTreeService treeService, MemesDao dao,
+                      MinioClient minioClient, HashProvider hashProvider,
+                      @Value("${service.tree.bit_resolution}") int bitResolution) {
         this.treeService = treeService;
         this.dao = dao;
         this.minioClient = minioClient;
@@ -72,9 +70,9 @@ public class EntryPoint {
 
     @Transactional(rollbackFor = Throwable.class)
     public void save(MetaMeme meme, byte[] image, Hash hash) throws Exception {
-        String objectName = hashProvider.hash(meme.getUrls());
+        //String objectName = hashProvider.hash(meme.getUrls());
         Timestamp now = Timestamp.from(OffsetDateTime.now().toInstant());
-        saveToMinio(image, objectName);
+        /*saveToMinio(image, objectName);
         CompleteMeme completeMeme = CompleteMeme.builder()
                 .bucketId(meme.getBucketId())
                 .source(meme.getSource())
@@ -83,7 +81,7 @@ public class EntryPoint {
                 .hash(hash.getHashValue().toString())
                 .url(makeUrl(objectName))
                 .build();
-        dao.save(completeMeme);
+        dao.save(completeMeme);*/
         treeService.put(new VPTreeNode(hash, now));
     }
 
@@ -91,9 +89,9 @@ public class EntryPoint {
     public void saveBatch(MetaMeme meme, List<ImageAndHash> iahs) throws Exception {
         List<VPTreeNode> nodes = new ArrayList<>();
         for (ImageAndHash iah : iahs) {
-            String objectName = hashProvider.hash(meme.getUrls());
+            //String objectName = hashProvider.hash(meme.getUrls());
             Timestamp now = Timestamp.from(OffsetDateTime.now().toInstant());
-            saveToMinio(iah.image, objectName);
+            /*saveToMinio(iah.image, objectName);
             CompleteMeme completeMeme = CompleteMeme.builder()
                     .bucketId(meme.getBucketId())
                     .source(meme.getSource())
@@ -102,7 +100,7 @@ public class EntryPoint {
                     .hash(iah.hash.getHashValue().toString())
                     .url(makeUrl(objectName))
                     .build();
-            dao.save(completeMeme);
+            dao.save(completeMeme);*/
             nodes.add(new VPTreeNode(iah.hash, now));
         }
         treeService.putAll(nodes);
@@ -117,7 +115,10 @@ public class EntryPoint {
     private List<ImageAndHash> collectImagesAndHashes(List<String> urls) throws Exception {
         List<ImageAndHash> imageAndHashes = new ArrayList<>();
         for (String url : urls) {
+            long a = System.currentTimeMillis();
             byte[] imageBytes = loadImage(url);
+            System.out.println("Image loading: " + (System.currentTimeMillis() - a));
+
             Hash hash = algorithm.hash(convertBytesToImage(imageBytes));
             imageAndHashes.add(new ImageAndHash(hash, imageBytes));
         }
@@ -134,6 +135,7 @@ public class EntryPoint {
 
     private void makeDecisionSingle(MetaMeme meme, ImageAndHash imageAndHash) throws Exception {
         boolean duplicate = treeService.isDuplicate(new VPTreeNode(imageAndHash.hash, null)); // think: костыыыыыыыль
+        System.out.println("Is duplicate meme: " + duplicate);
         if (duplicate) return;
         save(meme, imageAndHash.image, imageAndHash.hash);
     }
@@ -144,16 +146,16 @@ public class EntryPoint {
                 .filter(iah -> treeService.isDuplicate(new VPTreeNode(iah.hash, null))) // think: костыыыыыыыль
                 .count();
         double percentage = (double) duplicates / count;
-        if (percentage <= bucketMemesThreshold) saveBatch(meme, imageAndHashes);
+        if (percentage <= bucketDuplicateThreshold) saveBatch(meme, imageAndHashes);
     }
 
-    private byte[] loadImage(String url) throws IOException {
+    private static byte[] loadImage(String url) throws IOException {
         InputStream stream = new URL(url).openConnection().getInputStream();
         return IOUtils.toByteArray(stream);
     }
 
-    private BufferedImage convertBytesToImage(byte[] image) throws Exception {
-        return Imaging.getBufferedImage(image);
+    private static BufferedImage convertBytesToImage(byte[] image) throws Exception {
+        return ImageIO.read(new ByteArrayInputStream(image));
     }
 
     private String makeUrl(String objectName) {
