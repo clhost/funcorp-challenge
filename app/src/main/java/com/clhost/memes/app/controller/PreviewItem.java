@@ -1,4 +1,4 @@
-package com.clhost.memes.app.tree;
+package com.clhost.memes.app.controller;
 
 import lombok.Builder;
 import lombok.Data;
@@ -7,9 +7,8 @@ import java.util.List;
 
 @Data
 @Builder
-public class MetaMeme {
-    private String lang;
-    private String source;
+public class PreviewItem {
+    private String id;
     private String text;
     private List<String> urls;
 }

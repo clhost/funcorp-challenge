@@ -1,6 +1,5 @@
-package com.clhost.memes.tree;
+package com.clhost.memes.tree.controller;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,18 +14,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Building key for image for object storage
+ * Building id for bucket based on it's urls
  */
 @Service
 public class HashProvider {
     private static final Logger LOGGER = LogManager.getLogger(HashProvider.class);
-    private static final String ALGORITHM = "HmacSHA256";
+
+    private static final String ALGORITHM = "HmacSHA1";
     private static final String SECRET = "memes";
 
-    public String hash(List<String> urls) {
-        if (urls.size() == 1) return hash(urls.get(0));
-        String joined = StringUtils.join(urls.stream().map(this::prepareUrl).sorted().collect(Collectors.toList()), null);
+    public String bucketId(List<String> urls) {
+        if (urls.size() == 1) return hash(StringUtils.reverse(prepareUrl(urls.get(0))));
+        String joined = StringUtils.join(urls.stream()
+                .map(s -> StringUtils.reverse(prepareUrl(s)))
+                .sorted()
+                .collect(Collectors.toList()), null);
         return hash(joined);
+    }
+
+    public String contentId(String url) {
+        return hash(prepareUrl(url));
     }
 
     private String hash(String url) {
@@ -34,7 +41,7 @@ public class HashProvider {
             Mac mac = mac();
             SecretKeySpec key = secret();
             mac.init(key);
-            return hash(mac, prepareUrl(url));
+            return hash(mac, url);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             LOGGER.error(e.getMessage());
             throw new IllegalStateException();
@@ -54,6 +61,11 @@ public class HashProvider {
     }
 
     private String hash(Mac mac, String body) {
-        return Base64.encodeBase64String(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
+        byte[] bytes = mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
+        StringBuilder result = new StringBuilder();
+        for (byte element : bytes) {
+            result.append(Integer.toString((element & 0xff) + 0x100, 16).substring(1));
+        }
+        return result.toString();
     }
 }

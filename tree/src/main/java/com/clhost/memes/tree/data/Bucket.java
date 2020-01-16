@@ -1,19 +1,21 @@
 package com.clhost.memes.tree.data;
 
-import lombok.AllArgsConstructor;
+import lombok.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Data
+@Builder
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class MetaMeme {
+public class Bucket {
+    private String bucketId;
     private String text;
     private String lang;
     private String source;
-    private List<String> urls;
+    private Timestamp pubDate;
+    private List<com.clhost.memes.tree.data.Data> images;
 }

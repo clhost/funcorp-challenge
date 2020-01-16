@@ -10,8 +10,9 @@ import java.util.List;
 @Builder
 @ToString
 public class MemeBucket {
-    private String source; // example: vk:group:germameme
+    private String text;
     private String lang;
+    private String source;
     private List<String> urls;
 
     public boolean isEmpty() {

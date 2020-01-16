@@ -4,14 +4,29 @@ server:
 spring:
   application:
     name: memes
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 4
+      maximum-pool-size: 20
+      pool-name: "appPool"
+      auto-commit: true
+      connection-timeout: 20000
+      allow-pool-suspension: false
+    driver-class-name: org.postgresql.Driver
+    jdbcUrl: jdbc:postgresql://localhost:5432/docker #${datasource.url}
+    username: docker #${datasource.username}
+    password: docker #${datasource.password}
 service:
+  consul:
+    kv_src: "example/source"
+  tree:
+    name: "vp-tree"
+  feed:
+    page-item-count: 20
   vk:
     app_id: 7271243
     client_secret: "4oK6WSiUUPpAmONoD2Ut"
     service_key: "d0e8ee62d0e8ee62d0e8ee6293d0861d29dd0e8d0e8ee628efab6ede38fd80a46681715"
     memes_count: 10
-    startup_memes_count: 20
-  consul:
-    kv_src: "example/source"
-  tree:
-    name: "vp-tree"
+    startup_memes_count: 30

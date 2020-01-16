@@ -136,11 +136,16 @@ configure(project('app')) {
         implementation("com.google.guava:guava")
 
         //implementation(project(":tree"))
-        implementation('org.springframework.boot:spring-boot-autoconfigure')
+        //implementation('org.springframework.boot:spring-boot-autoconfigure')
 
         implementation('org.springframework.boot:spring-boot-starter-actuator') {
             exclude module: 'spring-boot-starter-logging'
         }
+
+        // jdbc
+        implementation('org.springframework.data:spring-data-jdbc')
+        implementation('org.postgresql:postgresql')
+        implementation('com.zaxxer:HikariCP')
     }
 
     test {

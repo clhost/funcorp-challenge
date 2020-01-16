@@ -20,7 +20,7 @@ public class TestController {
 
     @GetMapping("/test")
     public String test() throws ExecutionException, InterruptedException {
-        worker.act();
+        worker.work();
         return "ok!";
     }
 }

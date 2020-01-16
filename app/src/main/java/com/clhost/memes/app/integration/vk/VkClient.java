@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// не умеет читать посты с несколькими мемами
 @Service
 public class VkClient {
 
@@ -50,9 +49,9 @@ public class VkClient {
         if (items == null || items.isEmpty()) return Collections.emptyList();
 
         List<Attachments> attachments = items.stream()
-                .filter(item -> !item.isMarkedAsAds())
+                .filter(item -> !item.isMarkedAsAds() && !isPinned(item))
                 .filter(item -> item.getAttachments() != null && !item.getAttachments().isEmpty())
-                .map(item -> Attachments.builder().attachments(item.getAttachments()).id(String.valueOf(item.getId())).build())
+                .map(item -> Attachments.builder().attachments(item.getAttachments()).text(item.getText()).build())
                 .collect(Collectors.toList());
 
         return attachments.stream()
@@ -61,18 +60,24 @@ public class VkClient {
                 .collect(Collectors.toList());
     }
 
+    private boolean isPinned(WallpostFull item) {
+        return item.getIsPinned() != null && item.getIsPinned() == 1;
+    }
+
     private MemeBucket map(Attachments attachments) {
         List<Photo> photos = attachments.attachments.stream()
                 .filter(attachment -> WallpostAttachmentType.PHOTO.equals(attachment.getType()))
                 .map(WallpostAttachment::getPhoto)
                 .collect(Collectors.toList());
-        if (photos.isEmpty()) return MemeBucket.builder().build();
 
-        Photo photo = photos.get(0); // первая фотка (для синглов должно быть норм, а мультиаттачи потом запилю)
-        String url = detectMaxSizePhotoAndGetUrlOfMeme(photo);
+        if (photos.isEmpty()) return MemeBucket.builder().build();
+        List<String> urls = photos.stream()
+                .map(this::detectMaxSizePhotoAndGetUrlOfMeme)
+                .collect(Collectors.toList());
 
         return MemeBucket.builder()
-                .urls(Collections.singletonList(url))
+                .urls(urls)
+                .text(attachments.text)
                 .build();
     }
 
@@ -90,7 +95,7 @@ public class VkClient {
 
     @Builder
     private static class Attachments {
-        private String id;
+        private String text;
         private List<WallpostAttachment> attachments;
     }
 }

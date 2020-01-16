@@ -28,20 +28,17 @@ public class BasicWorker {
 
     private final TreeClient treeClient;
     private final ExecutorService executor;
-    private final HashProvider hashProvider;
 
     @Autowired
-    public BasicWorker(SourcesProvider sourcesProvider, List<MemeLoader> memeLoaders,
-                       TreeClient treeClient, HashProvider hashProvider) {
+    public BasicWorker(SourcesProvider sourcesProvider, List<MemeLoader> memeLoaders, TreeClient treeClient) {
         this.sourcesProvider = sourcesProvider;
         this.memeLoaders = memeLoaders;
         this.treeClient = treeClient;
-        this.hashProvider = hashProvider;
         this.executor = Executors.newCachedThreadPool();
     }
 
     @Scheduled
-    public void act() throws ExecutionException, InterruptedException {
+    public void work() throws ExecutionException, InterruptedException {
         List<SourceData> sources = sourcesProvider.sources();
         if (sources.isEmpty()) {
             LOGGER.warn("Source provider returns empty sources! Skip worker iteration");
@@ -72,7 +69,7 @@ public class BasicWorker {
             Future<List<MemeBucket>> future = fromAllSources.get(index);
             if (future.isDone()) {
                 List<MemeBucket> memeBuckets = future.get();
-                executor.execute(() -> process(memeBuckets));
+                executor.execute(() -> memeBuckets.forEach(this::putAsync));
                 fromAllSources.remove(index);
                 index = 0;
             } else {
@@ -88,15 +85,19 @@ public class BasicWorker {
                 .findAny().orElse(null);
     }
 
-    private void process(List<MemeBucket> buckets) {
-        buckets.forEach(bucket -> treeClient.putAsync(map(bucket)));
+    private void putAsync(MemeBucket bucket) {
+        try {
+            treeClient.putAsync(map(bucket));
+        } catch (Exception e) {
+            LOGGER.error("Failed to process meme={}, message={}", bucket, e.getMessage());
+        }
     }
 
     private MetaMeme map(MemeBucket bucket) {
         return MetaMeme.builder()
-                .bucketId(hashProvider.hash(bucket.getUrls()))
                 .lang(bucket.getLang())
                 .source(bucket.getSource())
+                .text(bucket.getText())
                 .urls(bucket.getUrls())
                 .build();
     }

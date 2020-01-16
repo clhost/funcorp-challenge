@@ -14,7 +14,7 @@ spring:
       connection-timeout: 20000
       allow-pool-suspension: false
     driver-class-name: org.postgresql.Driver
-    jdbcUrl: jdbc:postgresql://localhost:32769/docker #${datasource.url}
+    jdbcUrl: jdbc:postgresql://localhost:5432/docker #${datasource.url}
     username: docker #${datasource.username}
     password: docker #${datasource.password}
 service:
@@ -30,5 +30,6 @@ service:
     port: 9000
     access_key: "AKIAIOSFODNN7EXAMPLE"
     secret_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-    bucket_name: memes_bucket
+    bucket_name: memes-bucket
   queue_capacity: 1000
+  image_loaders_count: 5

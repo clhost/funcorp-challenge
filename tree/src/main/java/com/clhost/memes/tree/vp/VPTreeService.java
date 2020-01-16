@@ -1,17 +1,19 @@
 package com.clhost.memes.tree.vp;
 
-import com.clhost.memes.tree.MemesDao;
+import com.clhost.memes.tree.dao.MemesDao;
 import com.clhost.memes.tree.data.VPTreeDaoNode;
 import com.eatthepath.jvptree.DistanceFunction;
 import com.eatthepath.jvptree.ThresholdSelectionStrategy;
 import com.eatthepath.jvptree.VPTree;
 import com.github.kilianB.hash.Hash;
+import com.github.kilianB.hashAlgorithms.HashingAlgorithm;
 import com.github.kilianB.hashAlgorithms.PerceptiveHash;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -66,7 +68,6 @@ public class VPTreeService implements VPTreeInterface {
     @Override
     public void put(VPTreeNode node) {
         if (isThresholdExceeded()) releaseSomeMemory();
-        System.out.println("Put node=" + node);
         tree.add(node);
     }
 
@@ -115,5 +116,20 @@ public class VPTreeService implements VPTreeInterface {
     private int clearedPointsCount() {
         clearedPercentage = clearedPercentage < 1.0d ? clearedPercentage : 0.2d;
         return (int) (treeMaxCount * clearedPercentage);
+    }
+
+    public static void main(String[] args) throws Exception {
+        HashingAlgorithm algorithm = new PerceptiveHash(512);
+
+        File f1 = new File("/home/clhost/Desktop/f3.jpg");
+        File f2 = new File("/home/clhost/Desktop/f4.jpg");
+
+        Hash h1 = algorithm.hash(f1);
+        Hash h2 = algorithm.hash(f2);
+
+        System.out.println(h1.getHashValue().toString(2));
+        System.out.println(h2.getHashValue().toString(2));
+
+        System.out.println(h1.normalizedHammingDistance(h2));
     }
 }

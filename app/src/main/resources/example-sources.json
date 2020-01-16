@@ -10,5 +10,11 @@
     "lang": "de",
     "type": "group",
     "subSource": "lachdochmal"
+  },
+  {
+    "source": "vk",
+    "lang": "ru",
+    "type": "group",
+    "subSource": "4ch"
   }
 ]
