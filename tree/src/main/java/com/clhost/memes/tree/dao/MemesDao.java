@@ -1,8 +1,8 @@
 package com.clhost.memes.tree.dao;
 
-import com.clhost.memes.tree.data.Bucket;
-import com.clhost.memes.tree.data.Data;
-import com.clhost.memes.tree.data.VPTreeDaoNode;
+import com.clhost.memes.tree.dao.data.Bucket;
+import com.clhost.memes.tree.dao.data.Data;
+import com.clhost.memes.tree.dao.data.EntityNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -23,11 +23,11 @@ public class MemesDao {
     }
 
     // think: сделать селект как memesPage
-    public List<VPTreeDaoNode> lastNodes(long count) {
+    public List<EntityNode> lastNodes(long count) {
         String sql = "select hash, pub_date from memes_data order by pub_date limit :limit";
         SqlParameterSource source = new MapSqlParameterSource()
                 .addValue("limit", count);
-        return template.query(sql, source, (rs, rowNum) -> VPTreeDaoNode.builder()
+        return template.query(sql, source, (rs, rowNum) -> EntityNode.builder()
                 .hash(rs.getString("hash"))
                 .date(rs.getTimestamp("pub_date"))
                 .build());

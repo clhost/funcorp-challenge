@@ -1,7 +1,8 @@
-package com.clhost.memes.tree.data;
+package com.clhost.memes.tree.dao.data;
 
-import lombok.*;
+import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -9,13 +10,11 @@ import java.util.List;
 @Data
 @Builder
 @ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public class Bucket {
     private String bucketId;
     private String text;
     private String lang;
     private String source;
     private Timestamp pubDate;
-    private List<com.clhost.memes.tree.data.Data> images;
+    private List<com.clhost.memes.tree.dao.data.Data> images;
 }

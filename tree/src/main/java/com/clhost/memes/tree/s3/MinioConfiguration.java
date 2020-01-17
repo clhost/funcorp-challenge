@@ -1,4 +1,4 @@
-package com.clhost.memes.tree.conf;
+package com.clhost.memes.tree.s3;
 
 import io.minio.MinioClient;
 import io.minio.errors.InvalidEndpointException;

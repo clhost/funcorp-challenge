@@ -31,5 +31,6 @@ service:
     access_key: "AKIAIOSFODNN7EXAMPLE"
     secret_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
     bucket_name: memes-bucket
+    uploader-workers-count: 10
   queue_capacity: 1000
-  image_loaders_count: 5
+  image_workers_count: 5

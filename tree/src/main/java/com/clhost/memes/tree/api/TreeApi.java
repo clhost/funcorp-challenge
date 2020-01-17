@@ -1,6 +1,5 @@
-package com.clhost.memes.tree.controller;
+package com.clhost.memes.tree.api;
 
-import com.clhost.memes.tree.data.MetaMeme;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

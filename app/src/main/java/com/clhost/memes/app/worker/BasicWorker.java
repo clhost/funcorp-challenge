@@ -1,5 +1,6 @@
 package com.clhost.memes.app.worker;
 
+import com.clhost.memes.app.dao.MemesDao;
 import com.clhost.memes.app.data.MemeBucket;
 import com.clhost.memes.app.integration.MemeLoader;
 import com.clhost.memes.app.sources.SourceData;
@@ -23,14 +24,16 @@ import java.util.concurrent.Future;
 public class BasicWorker {
     private static final Logger LOGGER = LogManager.getLogger(BasicWorker.class);
 
-    private final SourcesProvider sourcesProvider;
-    private final List<MemeLoader> memeLoaders;
-
+    private final MemesDao memesDao;
     private final TreeClient treeClient;
     private final ExecutorService executor;
+    private final List<MemeLoader> memeLoaders;
+    private final SourcesProvider sourcesProvider;
 
     @Autowired
-    public BasicWorker(SourcesProvider sourcesProvider, List<MemeLoader> memeLoaders, TreeClient treeClient) {
+    public BasicWorker(MemesDao memesDao, SourcesProvider sourcesProvider,
+                       List<MemeLoader> memeLoaders, TreeClient treeClient) {
+        this.memesDao = memesDao;
         this.sourcesProvider = sourcesProvider;
         this.memeLoaders = memeLoaders;
         this.treeClient = treeClient;
@@ -50,8 +53,7 @@ public class BasicWorker {
             MemeLoader loader = memeLoader(source);
             if (loader == null) continue;
 
-            boolean isExists = false; // cacheInteract.atLeastOneBucketExistsBySource(source.sourceDesc());
-            if (isExists) {
+            if (memesDao.isSourceExists(source.sourceDesc())) {
                 Future<List<MemeBucket>> future = loader.onRegular(source);
                 fromAllSources.add(future);
             } else {

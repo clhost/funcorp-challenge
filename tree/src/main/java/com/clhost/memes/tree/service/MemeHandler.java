@@ -1,15 +1,16 @@
-package com.clhost.memes.tree.controller;
+package com.clhost.memes.tree.service;
 
+import com.clhost.memes.tree.api.MetaMeme;
 import com.clhost.memes.tree.dao.MemesDao;
-import com.clhost.memes.tree.data.Bucket;
-import com.clhost.memes.tree.data.Data;
-import com.clhost.memes.tree.data.MetaMeme;
-import com.clhost.memes.tree.vp.VPTreeNode;
-import com.clhost.memes.tree.vp.VPTreeService;
+import com.clhost.memes.tree.dao.data.Bucket;
+import com.clhost.memes.tree.dao.data.Data;
+import com.clhost.memes.tree.s3.MinioAsyncUploader;
+import com.clhost.memes.tree.vptree.MetricSpace;
+import com.clhost.memes.tree.vptree.VPTreeNode;
+import com.clhost.memes.tree.vptree.VPTreeService;
 import com.github.kilianB.hash.Hash;
 import com.github.kilianB.hashAlgorithms.HashingAlgorithm;
 import com.github.kilianB.hashAlgorithms.PerceptiveHash;
-import io.minio.MinioClient;
 import lombok.AllArgsConstructor;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -33,15 +34,8 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
-public class EntryPoint {
-    private static final Logger LOGGER = LogManager.getLogger(EntryPoint.class);
-
-    private final VPTreeService treeService;
-    private final MemesDao dao;
-    private final MinioClient minioClient;
-    private final HashingAlgorithm algorithm;
-    private final ReentrantLock lock;
-    private final HashProvider provider;
+public class MemeHandler {
+    private static final Logger LOGGER = LogManager.getLogger(MemeHandler.class);
 
     @Value("${service.tree.bucket_duplicate_threshold}")
     private double bucketDuplicateThreshold;
@@ -52,32 +46,39 @@ public class EntryPoint {
     @Value("${service.minio.endpoint}")
     private String minioEndpoint;
 
+    @Value("${service.minio.port}")
+    private int minioPort;
+
+    private final MetricSpace metricSpace;
+    private final MemesDao dao;
+    private final HashingAlgorithm algorithm;
+    private final ReentrantLock lock;
+    private final HashProvider provider;
+    private final MinioAsyncUploader asyncUploader;
+
     @Autowired
-    public EntryPoint(VPTreeService treeService, MemesDao dao,
-                      MinioClient minioClient, @Value("${service.tree.bit_resolution}") int bitResolution, HashProvider provider) {
-        this.treeService = treeService;
+    public MemeHandler(VPTreeService metricSpace, MemesDao dao,
+                       @Value("${service.tree.bit_resolution}") int bitResolution,
+                       HashProvider provider, MinioAsyncUploader asyncUploader) {
+        this.metricSpace = metricSpace;
         this.dao = dao;
-        this.minioClient = minioClient;
         this.provider = provider;
+        this.asyncUploader = asyncUploader;
         this.lock = new ReentrantLock();
         this.algorithm = new PerceptiveHash(bitResolution);
     }
 
-    // single threaded
-    public void doIt(MetaMeme meme) {
+    public void handleMeme(MetaMeme meme) {
         try {
             List<MemeShort> memeShorts = collectMemeShorts(meme.getUrls());
             makeDecision(meme, memeShorts);
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
-            // как-то обработать
         }
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void save(MetaMeme meme, byte[] image, Hash hash, String url) throws Exception {
-        System.out.println("SINGLE: " + meme + " " + url);
-
+    public void save(MetaMeme meme, byte[] image, Hash hash, String url) {
         Timestamp now = Timestamp.from(OffsetDateTime.now().toInstant());
         String bucketId = provider.bucketId(meme.getUrls());
         String contentId = provider.contentId(url);
@@ -87,22 +88,16 @@ public class EntryPoint {
                 .text(meme.getText())
                 .lang(meme.getLang())
                 .pubDate(now)
-                .images(Collections.singletonList(Data.builder()
-                        .contentId(contentId)
-                        .hash(hash.getHashValue().toString())
-                        .url(makeUrl(contentId))
-                        .pubDate(now)
-                        .build()))
+                .images(Collections.singletonList(
+                        new Data(contentId, hash.getHashValue().toString(), makeUrl(contentId), now)))
                 .build();
-        saveToMinio(image, contentId);
+        asyncUploader.uploadAsync(new MinioAsyncUploader.MinioObject(image, contentId));
         dao.save(bucket);
-        treeService.put(new VPTreeNode(hash, now));
+        metricSpace.put(new VPTreeNode(hash, now));
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public void saveBatch(MetaMeme meme, List<MemeShort> iahs) throws Exception {
-        System.out.println("BATCH: " + meme + " " + iahs);
-
+    public void saveBatch(MetaMeme meme, List<MemeShort> iahs) {
         List<Data> list = new ArrayList<>();
         List<VPTreeNode> nodes = new ArrayList<>();
 
@@ -111,13 +106,10 @@ public class EntryPoint {
 
         for (MemeShort iah : iahs) {
             String contentId = provider.contentId(iah.url);
-            Data data = Data.builder()
-                    .contentId(contentId)
-                    .hash(iah.hash.getHashValue().toString())
-                    .url(makeUrl(contentId))
-                    .pubDate(now)
-                    .build();
-            saveToMinio(iah.image, contentId);
+            Data data = new Data(contentId, makeUrl(contentId), iah.hash.getHashValue().toString(), now);
+
+            asyncUploader.uploadAsync(new MinioAsyncUploader.MinioObject(iah.image, contentId));
+
             list.add(data);
             nodes.add(new VPTreeNode(iah.hash, now));
         }
@@ -132,22 +124,13 @@ public class EntryPoint {
                 .build();
 
         dao.save(bucket);
-        treeService.putAll(nodes);
-    }
-
-    private void saveToMinio(byte[] image, String objectName) throws Exception {
-        System.out.println("Save " + objectName + " to Minio, with " + Thread.currentThread().getName());
-        minioClient.putObject(
-                minioBucketName, objectName,
-                new ByteArrayInputStream(image), (long) image.length, null, null, null);
+        metricSpace.putAll(nodes);
     }
 
     private List<MemeShort> collectMemeShorts(List<String> urls) throws Exception {
         List<MemeShort> memeShorts = new ArrayList<>();
         for (String url : urls) {
-            long a = System.currentTimeMillis();
             byte[] imageBytes = loadImage(url);
-            System.out.println("Image loading: " + (System.currentTimeMillis() - a));
             Hash hash = algorithm.hash(convertBytesToImage(imageBytes));
             memeShorts.add(new MemeShort(hash, imageBytes, url));
         }
@@ -167,24 +150,28 @@ public class EntryPoint {
         }
     }
 
-    private void makeDecisionSingle(MetaMeme meme, MemeShort memeShort) throws Exception {
-        long a = System.currentTimeMillis();
-        boolean duplicate = treeService.isDuplicate(new VPTreeNode(memeShort.hash, null)); // think: костыыыыыыыль
-        System.out.println("Is duplicate meme (" + (a - System.currentTimeMillis()) + "): " + duplicate);
+    private void makeDecisionSingle(MetaMeme meme, MemeShort memeShort) {
+        boolean duplicate = metricSpace.isDuplicate(new VPTreeNode(memeShort.hash, null));
+        LOGGER.debug("The meme {}, duplicated = {}", meme, duplicate);
         if (duplicate) return;
         save(meme, memeShort.image, memeShort.hash, memeShort.url);
     }
 
-    private void makeDecisionMultiple(MetaMeme meme, List<MemeShort> memeShorts) throws Exception {
+    private void makeDecisionMultiple(MetaMeme meme, List<MemeShort> memeShorts) {
         long count = memeShorts.size();
         long duplicates = memeShorts.stream()
-                .filter(iah -> treeService.isDuplicate(new VPTreeNode(iah.hash, null))) // think: костыыыыыыыль
+                .filter(iah -> metricSpace.isDuplicate(new VPTreeNode(iah.hash, null)))
                 .count();
+
         double percentage = (double) duplicates / count;
-        if (percentage <= bucketDuplicateThreshold) saveBatch(meme, memeShorts);
+        if (percentage <= bucketDuplicateThreshold)
+            saveBatch(meme, memeShorts);
+        else
+            LOGGER.debug("The meme {}, duplicated = {}", meme, duplicates);
     }
 
     private static byte[] loadImage(String url) throws IOException {
+        LOGGER.info("Load image url = {}", url);
         InputStream stream = new URL(url).openConnection().getInputStream();
         return IOUtils.toByteArray(stream);
     }
@@ -194,7 +181,7 @@ public class EntryPoint {
     }
 
     private String makeUrl(String objectName) {
-        return String.format("%s/%s/%s", minioEndpoint, minioBucketName, objectName);
+        return String.format("%s:%d/%s/%s", minioEndpoint, minioPort, minioBucketName, objectName);
     }
 
     @AllArgsConstructor

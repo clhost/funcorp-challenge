@@ -1,4 +1,4 @@
-package com.clhost.memes.tree.controller;
+package com.clhost.memes.tree.service;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;

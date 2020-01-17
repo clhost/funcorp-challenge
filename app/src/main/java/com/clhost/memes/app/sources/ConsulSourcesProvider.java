@@ -1,8 +1,6 @@
-package com.clhost.memes.app.sources.impl;
+package com.clhost.memes.app.sources;
 
 import com.clhost.memes.app.consul.InstanceIdBeanPostProcessor;
-import com.clhost.memes.app.sources.SourceData;
-import com.clhost.memes.app.sources.SourcesProvider;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.catalog.model.CatalogService;
@@ -18,10 +16,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Этот компонент берет конкретное число источников
- * Сортировка: по createIndex'у в Consul'е
- */
 @Service
 public class ConsulSourcesProvider implements SourcesProvider {
     private static final Logger LOGGER = LogManager.getLogger(ConsulSourcesProvider.class);

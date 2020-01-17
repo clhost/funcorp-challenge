@@ -1,4 +1,4 @@
-package com.clhost.memes.tree.data;
+package com.clhost.memes.tree.api;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

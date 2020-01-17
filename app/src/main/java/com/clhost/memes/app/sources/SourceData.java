@@ -12,7 +12,6 @@ public class SourceData {
     private String lang;
     private String type;
     private String subSource;
-    private boolean skipText;
 
     public String sourceDesc() {
         return source + ":" + type + ":" + subSource;

@@ -1,14 +1,14 @@
-package com.clhost.memes.tree.vp;
+package com.clhost.memes.tree.vptree;
 
 import com.github.kilianB.hash.Hash;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
 
 import java.sql.Timestamp;
 
 @Data
-@Builder
 @ToString
-@NoArgsConstructor
 @AllArgsConstructor
 public class VPTreeNode {
     private Hash hash;

@@ -1,30 +1,25 @@
-package com.clhost.memes.tree.vp;
+package com.clhost.memes.tree.vptree;
 
 import com.clhost.memes.tree.dao.MemesDao;
-import com.clhost.memes.tree.data.VPTreeDaoNode;
+import com.clhost.memes.tree.dao.data.EntityNode;
 import com.eatthepath.jvptree.DistanceFunction;
 import com.eatthepath.jvptree.ThresholdSelectionStrategy;
 import com.eatthepath.jvptree.VPTree;
 import com.github.kilianB.hash.Hash;
-import com.github.kilianB.hashAlgorithms.HashingAlgorithm;
 import com.github.kilianB.hashAlgorithms.PerceptiveHash;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Это должно быть отдельное однопоточное спринг бут приложение (в консуле его зарегаю)
- */
 @Service
-public class VPTreeService implements VPTreeInterface {
+public class VPTreeService implements MetricSpace {
 
     @Value("${service.tree.count_of_hashes}")
     private Long countOfHashes;
@@ -77,7 +72,7 @@ public class VPTreeService implements VPTreeInterface {
         tree.addAll(nodes);
     }
 
-    // very expensive operation ? (кажется это какая-то хуйня)
+    // very expensive operation ? (кажется это какая-то хуйня) think: нужна ли мне эта очистка памяти?
     private void releaseSomeMemory() {
         System.err.println("Memory released");
         List<VPTreeNode> nodes = tree.stream()
@@ -107,7 +102,7 @@ public class VPTreeService implements VPTreeInterface {
         return (points, origin, distanceFunction) -> duplicateThreshold;
     }
 
-    private VPTreeNode mapNode(VPTreeDaoNode node) {
+    private VPTreeNode mapNode(EntityNode node) {
         return new VPTreeNode(
                 new Hash(BigInteger.valueOf(Long.parseLong(node.getHash())),
                         bitResolution, algorithmId), node.getDate());
@@ -116,20 +111,5 @@ public class VPTreeService implements VPTreeInterface {
     private int clearedPointsCount() {
         clearedPercentage = clearedPercentage < 1.0d ? clearedPercentage : 0.2d;
         return (int) (treeMaxCount * clearedPercentage);
-    }
-
-    public static void main(String[] args) throws Exception {
-        HashingAlgorithm algorithm = new PerceptiveHash(512);
-
-        File f1 = new File("/home/clhost/Desktop/f3.jpg");
-        File f2 = new File("/home/clhost/Desktop/f4.jpg");
-
-        Hash h1 = algorithm.hash(f1);
-        Hash h2 = algorithm.hash(f2);
-
-        System.out.println(h1.getHashValue().toString(2));
-        System.out.println(h2.getHashValue().toString(2));
-
-        System.out.println(h1.normalizedHammingDistance(h2));
     }
 }

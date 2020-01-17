@@ -66,6 +66,14 @@ public class MemesDao {
         return mapToContentItem(contents);
     }
 
+    public boolean isSourceExists(String src) {
+        String sql = "select count(*) from memes_bucket where source like :source";
+        SqlParameterSource source = new MapSqlParameterSource()
+                .addValue("source", src);
+        Long count = template.queryForObject(sql, source, Long.class);
+        return count != null && count > 0;
+    }
+
     private ContentItem mapToContentItem(List<ContentEntity> contents) {
         if (contents == null) return ContentItem.builder().build();
         return contents.stream()

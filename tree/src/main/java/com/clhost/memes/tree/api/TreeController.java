@@ -1,6 +1,6 @@
-package com.clhost.memes.tree.controller;
+package com.clhost.memes.tree.api;
 
-import com.clhost.memes.tree.data.MetaMeme;
+import com.clhost.memes.tree.service.MemeHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
-import java.time.OffsetDateTime;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,32 +20,28 @@ import java.util.concurrent.Executors;
 public class TreeController implements TreeApi {
     private static final Logger LOGGER = LogManager.getLogger(TreeController.class);
 
-    private final EntryPoint entryPoint;
+    private final int imageWorkersCount;
+    private final MemeHandler memeHandler;
     private final ExecutorService executor;
     private final ArrayBlockingQueue<MetaMeme> incomingMemes;
-    private final int imageLoadersCount;
 
     @Autowired
-    public TreeController(EntryPoint entryPoint,
+    public TreeController(MemeHandler memeHandler,
                           @Value("${service.queue_capacity}") int queueCapacity,
-                          @Value("${service.image_loaders_count}") int imageLoadersCount) {
-        this.entryPoint = entryPoint;
-        this.imageLoadersCount = imageLoadersCount;
-        this.executor = Executors.newFixedThreadPool(imageLoadersCount);
+                          @Value("${service.image_workers_count}") int imageWorkersCount) {
+        this.memeHandler = memeHandler;
+        this.imageWorkersCount = imageWorkersCount;
+        this.executor = Executors.newFixedThreadPool(imageWorkersCount);
         this.incomingMemes = new ArrayBlockingQueue<>(queueCapacity);
     }
 
     @PostConstruct
-    public void initRead() {
-        for (int i = 0; i < imageLoadersCount; i++) { executor.execute(this::doWithMeme); }
+    public void initWorkers() {
+        for (int i = 0; i < imageWorkersCount; i++) { executor.execute(this::handleMeme); }
     }
 
     @Override
     public void putAsync(@RequestBody @Valid MetaMeme metaMeme) {
-        putMeme(metaMeme);
-    }
-
-    private void putMeme(MetaMeme metaMeme) {
         try {
             incomingMemes.put(metaMeme);
         } catch (InterruptedException e) {
@@ -54,12 +49,11 @@ public class TreeController implements TreeApi {
         }
     }
 
-    private void doWithMeme() {
+    private void handleMeme() {
         try {
             while (true) {
                 MetaMeme meme = incomingMemes.take();
-                System.out.println("[" + OffsetDateTime.now().toString() + "] " + Thread.currentThread().getName() + " getting item");
-                entryPoint.doIt(meme);
+                memeHandler.handleMeme(meme);
             }
         } catch (InterruptedException e) {
             LOGGER.error(e.getMessage(), e);
