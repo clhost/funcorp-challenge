@@ -1,7 +1,7 @@
-package com.clhost.memes.app.integration.vk;
+package com.clhost.memes.app.integration;
 
-import com.clhost.memes.app.data.MemeBucket;
-import com.clhost.memes.app.integration.MemeLoader;
+import com.clhost.memes.app.worker.MemeBucket;
+import com.clhost.memes.app.worker.MemeLoader;
 import com.clhost.memes.app.sources.SourceData;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;

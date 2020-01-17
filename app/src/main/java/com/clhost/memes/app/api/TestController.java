@@ -1,5 +1,6 @@
-package com.clhost.memes.app.worker;
+package com.clhost.memes.app.api;
 
+import com.clhost.memes.app.worker.BasicWorker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

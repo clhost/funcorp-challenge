@@ -1,6 +1,5 @@
-package com.clhost.memes.app.integration;
+package com.clhost.memes.app.worker;
 
-import com.clhost.memes.app.data.MemeBucket;
 import com.clhost.memes.app.sources.SourceData;
 
 import java.util.List;

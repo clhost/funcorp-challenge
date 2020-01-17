@@ -1,7 +1,6 @@
 package com.clhost.memes.tree.vptree;
 
 import com.clhost.memes.tree.dao.MemesDao;
-import com.clhost.memes.tree.dao.data.EntityNode;
 import com.eatthepath.jvptree.DistanceFunction;
 import com.eatthepath.jvptree.ThresholdSelectionStrategy;
 import com.eatthepath.jvptree.VPTree;
@@ -11,105 +10,68 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class VPTreeService implements MetricSpace {
 
-    @Value("${service.tree.count_of_hashes}")
-    private Long countOfHashes;
-
-    @Value("${service.tree.tree_max_count}")
-    private Long treeMaxCount;
-
     @Value("${service.tree.duplicate_threshold}")
     private double duplicateThreshold;
 
-    @Value("${service.tree.cleared_percentage}")
-    private double clearedPercentage;
-
-    private VPTree<VPTreeNode, VPTreeNode> tree;
+    private int bitResolution;
+    private VPTree<Hash, Hash> tree;
 
     private final MemesDao dao;
-    private final int algorithmId;
-
-    private int bitResolution;
-    private int clearedPointsCount;
 
     @Autowired
-    public VPTreeService(MemesDao dao, @Value("${service.tree.bit_resolution}") int bitResolution) {
+    public VPTreeService(MemesDao dao,
+                         @Value("${service.tree.bit_resolution}") int bitResolution,
+                         @Value("${service.tree.is_normalized_distance}") boolean isNormalized,
+                         @Value("${service.tree.count_of_hashes}") long countOfHashes) {
         this.dao = dao;
         this.bitResolution = bitResolution;
-        this.tree = new VPTree<>(distanceFunction(), strategy(), loadLastNHashes());
-        this.algorithmId = new PerceptiveHash(bitResolution).algorithmId();
-    }
-
-    @PostConstruct
-    public void post() {
-        this.clearedPointsCount = clearedPointsCount();
+        this.tree = new VPTree<>(
+                distanceFunction(isNormalized),
+                strategy(),
+                loadLastNHashes(countOfHashes, new PerceptiveHash(bitResolution).algorithmId()));
+        System.err.println("Size of tree: " + tree.size());
     }
 
     @Override
-    public boolean isDuplicate(VPTreeNode node) {
-        List<VPTreeNode> nodes = tree.getAllWithinDistance(node, duplicateThreshold);
+    public boolean isDuplicate(Hash node) {
+        List<Hash> nodes = tree.getAllWithinDistance(node, duplicateThreshold);
         return nodes != null && nodes.size() > 0;
     }
 
     @Override
-    public void put(VPTreeNode node) {
-        if (isThresholdExceeded()) releaseSomeMemory();
+    public void put(Hash node) {
         tree.add(node);
     }
 
     @Override
-    public void putAll(List<VPTreeNode> nodes) {
-        if (isThresholdExceeded()) releaseSomeMemory();
+    public void putAll(List<Hash> nodes) {
         tree.addAll(nodes);
     }
 
-    // very expensive operation ? (кажется это какая-то хуйня) think: нужна ли мне эта очистка памяти?
-    private void releaseSomeMemory() {
-        System.err.println("Memory released");
-        List<VPTreeNode> nodes = tree.stream()
-                .sorted(Comparator.comparing(VPTreeNode::getDate))
-                .skip(clearedPointsCount)
-                .collect(Collectors.toList());
-        tree = new VPTree<>(distanceFunction(), strategy(), nodes);
-    }
-
-    private boolean isThresholdExceeded() {
-        return tree.size() >= treeMaxCount;
-    }
-
-    private List<VPTreeNode> loadLastNHashes() {
-        /*List<VPTreeDaoNode> nodes = dao.lastNodes(countOfHashes);
-        return nodes == null
+    private List<Hash> loadLastNHashes(long countOfHashes, int algorithmId) {
+        List<String> hashes = dao.lastNodes(countOfHashes);
+        return hashes == null
                 ? new ArrayList<>()
-                : nodes.stream().map(this::mapNode).collect(Collectors.toList());*/
-        return new ArrayList<>();
+                : hashes.stream().map(h -> mapHash(h, algorithmId)).collect(Collectors.toList());
     }
 
-    private DistanceFunction<VPTreeNode> distanceFunction() {
-        return (firstPoint, secondPoint) -> firstPoint.getHash().normalizedHammingDistance(secondPoint.getHash());
+    private DistanceFunction<Hash> distanceFunction(boolean isNormalized) {
+        return isNormalized ? Hash::normalizedHammingDistance : Hash::hammingDistance;
     }
 
-    private ThresholdSelectionStrategy<VPTreeNode, VPTreeNode> strategy() {
+    private ThresholdSelectionStrategy<Hash, Hash> strategy() {
         return (points, origin, distanceFunction) -> duplicateThreshold;
     }
 
-    private VPTreeNode mapNode(EntityNode node) {
-        return new VPTreeNode(
-                new Hash(BigInteger.valueOf(Long.parseLong(node.getHash())),
-                        bitResolution, algorithmId), node.getDate());
-    }
-
-    private int clearedPointsCount() {
-        clearedPercentage = clearedPercentage < 1.0d ? clearedPercentage : 0.2d;
-        return (int) (treeMaxCount * clearedPercentage);
+    private Hash mapHash(String hash, int algorithmId) {
+        return new Hash(new BigInteger(hash), bitResolution, algorithmId);
     }
 }

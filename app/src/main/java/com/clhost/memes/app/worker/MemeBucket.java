@@ -1,4 +1,4 @@
-package com.clhost.memes.app.data;
+package com.clhost.memes.app.worker;
 
 import lombok.Builder;
 import lombok.Data;

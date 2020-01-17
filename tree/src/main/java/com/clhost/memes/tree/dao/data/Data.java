@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 public class Data {
     private String contentId;
-    private String url;
     private String hash;
+    private String url;
     private Timestamp pubDate;
 }

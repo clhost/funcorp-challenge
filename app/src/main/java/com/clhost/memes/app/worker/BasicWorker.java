@@ -1,8 +1,6 @@
 package com.clhost.memes.app.worker;
 
 import com.clhost.memes.app.dao.MemesDao;
-import com.clhost.memes.app.data.MemeBucket;
-import com.clhost.memes.app.integration.MemeLoader;
 import com.clhost.memes.app.sources.SourceData;
 import com.clhost.memes.app.sources.SourcesProvider;
 import com.clhost.memes.app.tree.MetaMeme;
@@ -23,6 +21,7 @@ import java.util.concurrent.Future;
 @Service
 public class BasicWorker {
     private static final Logger LOGGER = LogManager.getLogger(BasicWorker.class);
+    private static final String WORK_DELAY_PLACEHOLDER = "${service.worker.delay}";
 
     private final MemesDao memesDao;
     private final TreeClient treeClient;
@@ -40,7 +39,7 @@ public class BasicWorker {
         this.executor = Executors.newCachedThreadPool();
     }
 
-    @Scheduled
+    @Scheduled(initialDelayString = WORK_DELAY_PLACEHOLDER, fixedDelayString = WORK_DELAY_PLACEHOLDER)
     public void work() throws ExecutionException, InterruptedException {
         List<SourceData> sources = sourcesProvider.sources();
         if (sources.isEmpty()) {
@@ -91,7 +90,7 @@ public class BasicWorker {
         try {
             treeClient.putAsync(map(bucket));
         } catch (Exception e) {
-            LOGGER.error("Failed to process meme={}, message={}", bucket, e.getMessage());
+            LOGGER.error("Failed to put meme={}, message={}", bucket, e.getMessage());
         }
     }
 

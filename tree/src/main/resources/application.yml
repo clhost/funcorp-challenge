@@ -20,11 +20,10 @@ spring:
 service:
   tree:
     count_of_hashes: 1000
-    tree_max_count: 10000
     bit_resolution: 512
     duplicate_threshold: 0.2
-    cleared_percentage: 0.25
     bucket_duplicate_threshold: 0.6
+    is_normalized_distance: true
   minio:
     endpoint: localhost
     port: 9000

@@ -1,5 +1,8 @@
-package com.clhost.memes.app.controller;
+package com.clhost.memes.app.api;
 
+import com.clhost.memes.app.api.model.ApiFault;
+import com.clhost.memes.app.api.model.ContentItem;
+import com.clhost.memes.app.api.model.PreviewItem;
 import com.clhost.memes.app.dao.MemesDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

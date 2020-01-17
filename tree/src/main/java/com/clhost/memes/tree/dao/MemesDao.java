@@ -2,7 +2,6 @@ package com.clhost.memes.tree.dao;
 
 import com.clhost.memes.tree.dao.data.Bucket;
 import com.clhost.memes.tree.dao.data.Data;
-import com.clhost.memes.tree.dao.data.EntityNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -22,21 +21,17 @@ public class MemesDao {
         this.template = template;
     }
 
-    // think: сделать селект как memesPage
-    public List<EntityNode> lastNodes(long count) {
-        String sql = "select hash, pub_date from memes_data order by pub_date limit :limit";
+    public List<String> lastNodes(long count) {
+        String sql = "select hash from memes_data order by pub_date desc limit :limit";
         SqlParameterSource source = new MapSqlParameterSource()
                 .addValue("limit", count);
-        return template.query(sql, source, (rs, rowNum) -> EntityNode.builder()
-                .hash(rs.getString("hash"))
-                .date(rs.getTimestamp("pub_date"))
-                .build());
+        return template.query(sql, source, (rs, rowNum) -> rs.getString("hash"));
     }
 
     @Transactional
     public void save(Bucket bucket) {
-        //LOGGER.debug("Save meme: {}", bucket.toString());
-        System.out.println("Save meme " + Thread.currentThread().getName() + ":  " + bucket.toString());
+        LOGGER.debug("Save bucket: {}", bucket.toString());
+        System.out.println("Save bucket: " + bucket.toString());
         saveBucket(bucket);
         saveData(bucket.getBucketId(), bucket.getImages());
     }

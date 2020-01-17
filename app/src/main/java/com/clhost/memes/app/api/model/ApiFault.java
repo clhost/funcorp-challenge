@@ -1,4 +1,4 @@
-package com.clhost.memes.app.controller;
+package com.clhost.memes.app.api.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,7 +1,7 @@
-package com.clhost.memes.app.integration;
+package com.clhost.memes.app.worker;
 
-import com.clhost.memes.app.integration.vk.VkClient;
-import com.clhost.memes.app.integration.vk.VkLoader;
+import com.clhost.memes.app.integration.VkClient;
+import com.clhost.memes.app.integration.VkLoader;
 import com.google.common.collect.Lists;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

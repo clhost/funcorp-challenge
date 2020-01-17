@@ -2,7 +2,6 @@ package com.clhost.memes.tree.s3;
 
 import io.minio.MinioClient;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

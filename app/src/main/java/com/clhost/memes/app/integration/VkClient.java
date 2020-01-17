@@ -1,6 +1,6 @@
-package com.clhost.memes.app.integration.vk;
+package com.clhost.memes.app.integration;
 
-import com.clhost.memes.app.data.MemeBucket;
+import com.clhost.memes.app.worker.MemeBucket;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;
 import com.vk.api.sdk.exceptions.ApiException;
@@ -77,7 +77,7 @@ public class VkClient {
 
         return MemeBucket.builder()
                 .urls(urls)
-                .text(attachments.text)
+                .text(attachments.text.replaceAll("\n", " "))
                 .build();
     }
 

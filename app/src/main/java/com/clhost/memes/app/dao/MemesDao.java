@@ -1,8 +1,9 @@
 package com.clhost.memes.app.dao;
 
-import com.clhost.memes.app.controller.ContentData;
-import com.clhost.memes.app.controller.ContentItem;
-import com.clhost.memes.app.controller.PreviewItem;
+import com.clhost.memes.app.api.model.ContentData;
+import com.clhost.memes.app.api.model.ContentItem;
+import com.clhost.memes.app.api.model.PreviewItem;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +13,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,11 +32,11 @@ public class MemesDao {
 
     public List<PreviewItem> memesPage(long count, long offset, String lang) {
         String sql =
-                "select m.bucket_id, b.text, m.url\n " +
-                "from \n" +
-                "(select bucket_id, lang, text from memes_bucket where lang = :lang " +
-                "        order by pub_date limit :limit offset :offset) b\n " +
-                "        join memes_data m on m.bucket_id = b.bucket_id";
+                "select m.bucket_id, b.text, m.url, b.pub_date\n " +
+                        "from \n" +
+                        "(select bucket_id, lang, text, pub_date from memes_bucket where lang = :lang " +
+                        "        order by pub_date desc limit :limit offset :offset) b\n " +
+                        "        join memes_data m on m.bucket_id = b.bucket_id";
         SqlParameterSource source = new MapSqlParameterSource()
                 .addValue("lang", lang)
                 .addValue("limit", count)
@@ -40,6 +45,7 @@ public class MemesDao {
                 .bucketId(rs.getString("bucket_id"))
                 .url(rs.getString("url"))
                 .text(rs.getString("text"))
+                .pubDate(rs.getTimestamp("pub_date"))
                 .build());
         return mapToPreviewItems(bucketEntities);
     }
@@ -47,10 +53,10 @@ public class MemesDao {
     public ContentItem contentItemInfo(String bucketId) {
         String sql =
                 "select mb.bucket_id, mb.lang, mb.text, mb.source, mb.pub_date bucket_pub_date, \n" +
-                "       md.content_id, md.url, md.pub_date content_pub_date\n " +
-                "from memes_bucket mb\n " +
-                "join memes_data md on mb.bucket_id = md.bucket_id\n " +
-                "where mb.bucket_id = :bucket_id";
+                        "       md.content_id, md.url, md.pub_date content_pub_date\n " +
+                        "from memes_bucket mb\n " +
+                        "join memes_data md on mb.bucket_id = md.bucket_id\n " +
+                        "where mb.bucket_id = :bucket_id";
         SqlParameterSource source = new MapSqlParameterSource()
                 .addValue("bucket_id", bucketId);
         List<ContentEntity> contents = template.query(sql, source, (rs, rowNum) -> ContentEntity.builder()
@@ -106,21 +112,25 @@ public class MemesDao {
         if (bucketUrls == null) return Collections.emptyList();
         return bucketUrls.stream()
                 .collect(Collectors.groupingBy(
-                        e -> PreviewItemKey.builder().bucketId(e.getBucketId()).text(e.getText()).build(),
+                        e -> new PreviewItemKey(e.getText(), e.getBucketId(), e.getPubDate()),
                         Collectors.mapping(BucketEntity::getUrl, Collectors.toList())))
                 .entrySet().stream()
                 .map(entry -> PreviewItem.builder()
                         .id(entry.getKey().getBucketId())
                         .text(entry.getKey().getText())
-                        .urls(entry.getValue()).build())
+                        .urls(entry.getValue())
+                        .time(entry.getKey().getBucketPubDate())
+                        .build())
+                .sorted((t1, t2) -> t2.getTime().compareTo(t1.getTime()))
                 .collect(Collectors.toList());
     }
 
     @Data
-    @Builder
+    @AllArgsConstructor
     private static class PreviewItemKey {
-        private String bucketId;
         private String text;
+        private String bucketId;
+        private Timestamp bucketPubDate;
     }
 
     @Data
