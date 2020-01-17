@@ -35,3 +35,17 @@ service:
     uploader-workers-count: 10
   queue_capacity: 1000
   image_workers_count: 5
+management:
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    export:
+      prometheus:
+        enabled: true

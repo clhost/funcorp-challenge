@@ -1,0 +1,16 @@
+language: java
+
+jdk:
+  - oraclejdk8
+
+os:
+  - linux
+
+dist: trusty
+
+cache:
+  directories:
+    - $HOME/.gradle
+
+script:
+  - ./gradlew clean build

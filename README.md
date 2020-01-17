@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/clhost/funcorp-challenge.svg?token=8Qu4bPcVDqaSCkhPsMBM&branch=release/1.0.x)](https://travis-ci.com/clhost/funcorp-challenge)
+
 # Funcorp Challenge Task
 Напишите приложение на Java или/и KotlIn, которое с максимальной скоростью распознает и соберёт все мемы на 
 немецком языке и вернёт их в качестве ленты контента, сопровождаемого метаданными, отсортированной по времени 

@@ -12,6 +12,7 @@ ext {
             'jImage'        : '3.0.0',
             'commonsImage'  : '1.0-alpha1',
             'hikariCP'      : '3.4.1',
-            'liquibase'     : '3.8.0'
+            'liquibase'     : '3.8.0',
+            'metrics'       : 'latest.release'
     ]
 }
