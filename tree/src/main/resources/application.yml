@@ -21,7 +21,7 @@ spring:
     change-log: "classpath:sql/schema_changelog.yaml"
 service:
   tree:
-    count_of_hashes: 1000
+    count_of_hashes: 10000
     bit_resolution: 512
     duplicate_threshold: 0.2
     bucket_duplicate_threshold: 0.6

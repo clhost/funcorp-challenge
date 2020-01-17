@@ -16,5 +16,17 @@
     "lang": "ru",
     "type": "group",
     "subSource": "4ch"
+  },
+  {
+    "source": "vk",
+    "lang": "ru",
+    "type": "group",
+    "subSource": "bot_maxim"
+  },
+  {
+    "source": "vk",
+    "lang": "en",
+    "type": "group",
+    "subSource": "enskazki"
   }
 ]

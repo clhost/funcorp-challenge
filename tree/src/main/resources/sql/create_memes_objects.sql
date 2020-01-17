@@ -1,7 +1,7 @@
 create table memes_bucket (
-	bucket_id       varchar(200) not null primary key,
+	bucket_id       varchar(200) not null unique,
 	lang            varchar(2)   not null,
-	text            varchar(500),
+	text            varchar(1000),
 	source          varchar(50)  not null,
 	pub_date        timestamp    not null
 )

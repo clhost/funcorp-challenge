@@ -4,6 +4,7 @@ import com.clhost.memes.tree.dao.MemesDao;
 import com.eatthepath.jvptree.DistanceFunction;
 import com.eatthepath.jvptree.ThresholdSelectionStrategy;
 import com.eatthepath.jvptree.VPTree;
+import com.eatthepath.jvptree.util.SamplingMedianDistanceThresholdSelectionStrategy;
 import com.github.kilianB.hash.Hash;
 import com.github.kilianB.hashAlgorithms.PerceptiveHash;
 import org.apache.logging.log4j.LogManager;
@@ -38,7 +39,7 @@ public class VPTreeService implements MetricSpace {
         this.bitResolution = bitResolution;
         this.tree = new VPTree<>(
                 distanceFunction(isNormalized),
-                strategy(),
+                strategy(bitResolution),
                 loadLastNHashes(countOfHashes, new PerceptiveHash(bitResolution).algorithmId()));
         LOGGER.info("Size of vp-tree: " + tree.size());
     }
@@ -70,8 +71,8 @@ public class VPTreeService implements MetricSpace {
         return isNormalized ? Hash::normalizedHammingDistance : Hash::hammingDistance;
     }
 
-    private ThresholdSelectionStrategy<Hash, Hash> strategy() {
-        return (points, origin, distanceFunction) -> duplicateThreshold;
+    private ThresholdSelectionStrategy<Hash, Hash> strategy(int bitResolution) {
+        return new SamplingMedianDistanceThresholdSelectionStrategy<>(bitResolution);
     }
 
     private Hash mapHash(String hash, int algorithmId) {
