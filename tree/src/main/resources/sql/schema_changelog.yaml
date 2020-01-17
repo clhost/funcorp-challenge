@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: create.memes.objects
+      author: clhost
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            relativeToChangelogFile: true
+            path: create_memes_objects.sql

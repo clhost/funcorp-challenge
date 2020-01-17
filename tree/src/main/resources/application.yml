@@ -17,6 +17,8 @@ spring:
     jdbcUrl: jdbc:postgresql://localhost:5432/docker #${datasource.url}
     username: docker #${datasource.username}
     password: docker #${datasource.password}
+  liquibase:
+    change-log: "classpath:sql/schema_changelog.yaml"
 service:
   tree:
     count_of_hashes: 1000

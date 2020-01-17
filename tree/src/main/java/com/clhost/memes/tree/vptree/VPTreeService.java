@@ -6,6 +6,8 @@ import com.eatthepath.jvptree.ThresholdSelectionStrategy;
 import com.eatthepath.jvptree.VPTree;
 import com.github.kilianB.hash.Hash;
 import com.github.kilianB.hashAlgorithms.PerceptiveHash;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class VPTreeService implements MetricSpace {
+    private static final Logger LOGGER = LogManager.getLogger(VPTreeService.class);
 
     @Value("${service.tree.duplicate_threshold}")
     private double duplicateThreshold;
@@ -37,7 +40,7 @@ public class VPTreeService implements MetricSpace {
                 distanceFunction(isNormalized),
                 strategy(),
                 loadLastNHashes(countOfHashes, new PerceptiveHash(bitResolution).algorithmId()));
-        System.err.println("Size of tree: " + tree.size());
+        LOGGER.info("Size of vp-tree: " + tree.size());
     }
 
     @Override

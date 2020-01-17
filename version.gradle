@@ -11,6 +11,7 @@ ext {
             'minio'         : '6.0.11',
             'jImage'        : '3.0.0',
             'commonsImage'  : '1.0-alpha1',
-            'hikariCP'      : '3.4.1'
+            'hikariCP'      : '3.4.1',
+            'liquibase'     : '3.8.0'
     ]
 }
