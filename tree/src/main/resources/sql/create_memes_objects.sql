@@ -17,7 +17,7 @@ create table memes_data (
 	content_id      varchar(200) not null,
 	bucket_id       varchar(200) not null,
 	url             varchar(100) not null,
-	hash            varchar(256) not null,
+	hash            varchar(256) not null unique,
 	pub_date        timestamp    not null,
 
 	constraint memes_data_pk primary key (content_id),

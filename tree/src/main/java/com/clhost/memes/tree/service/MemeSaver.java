@@ -99,7 +99,7 @@ public class MemeSaver {
     }
 
     private void save(Bucket bucket) {
-        LOGGER.debug("Save bucket: {}", bucket.toString());
+        LOGGER.info("Save bucket: {}", bucket.toString());
         dao.saveBucket(bucket);
         dao.saveData(bucket.getBucketId(), bucket.getImages());
     }

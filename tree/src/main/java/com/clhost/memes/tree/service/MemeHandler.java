@@ -1,6 +1,7 @@
 package com.clhost.memes.tree.service;
 
 import com.clhost.memes.tree.api.MetaMeme;
+import com.clhost.memes.tree.dao.MemesDao;
 import com.clhost.memes.tree.vptree.MetricSpace;
 import com.clhost.memes.tree.vptree.VPTreeService;
 import com.github.kilianB.hash.Hash;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -30,18 +32,29 @@ public class MemeHandler {
     @Value("${service.tree.bucket_duplicate_threshold}")
     private double bucketDuplicateThreshold;
 
+    @Value("${service.tree.count_of_hashes}")
+    private long countOfHashes;
+
+    private final MemesDao dao;
     private final MemeSaver saver;
     private final MetricSpace metricSpace;
     private final HashingAlgorithm algorithm;
     private final ReentrantLock lock;
 
     @Autowired
-    public MemeHandler(MemeSaver saver, VPTreeService metricSpace,
+    public MemeHandler(MemesDao dao, MemeSaver saver, VPTreeService metricSpace,
                        @Value("${service.tree.bit_resolution}") int bitResolution) {
+        this.dao = dao;
         this.saver = saver;
         this.metricSpace = metricSpace;
         this.lock = new ReentrantLock();
         this.algorithm = new PerceptiveHash(bitResolution);
+    }
+
+    @PostConstruct
+    public void initMetricSpace() {
+        List<String> hashes = dao.lastNodes(countOfHashes);
+        metricSpace.load(hashes);
     }
 
     public void handleMeme(MetaMeme meme) {
@@ -78,7 +91,7 @@ public class MemeHandler {
 
     private void makeDecisionSingle(MetaMeme meme, MemeSaver.MemeShort memeShort) {
         boolean duplicate = metricSpace.isDuplicate(memeShort.hash);
-        LOGGER.debug("The meme {}, duplicated = {}", meme, duplicate);
+        LOGGER.info("The meme {}, duplicated = {}", meme, duplicate);
         if (duplicate) return;
         saver.save(meme, memeShort.image, memeShort.hash, memeShort.url);
     }
