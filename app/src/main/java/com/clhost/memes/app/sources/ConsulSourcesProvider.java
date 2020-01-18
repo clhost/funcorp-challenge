@@ -47,7 +47,9 @@ public class ConsulSourcesProvider implements SourcesProvider {
         Integer position = position(services);
         Integer servicesCount = services.size();
 
-        return selectSources(position, servicesCount, sources);
+        List<SourceData> sourceData = selectSources(position, servicesCount, sources);
+        LOGGER.info("Sources for current node: {}", sourceData);
+        return sourceData;
     }
 
     private List<SourceData> selectSources(Integer position, Integer servicesCount, List<SourceData> sources) {

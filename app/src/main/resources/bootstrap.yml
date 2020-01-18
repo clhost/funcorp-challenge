@@ -5,6 +5,3 @@ spring:
     consul:
       host: ${consul.host:localhost}
       port: ${consul.port:8500}
-    loadbalancer:
-      ribbon:
-        enabled: true

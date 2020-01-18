@@ -22,6 +22,8 @@ service:
     kv_src: ${consul.kv_src}
   tree:
     name: ${tree.name}
+    read-timeout: ${tree.read_timeout}
+    connection-timeout: ${tree.connection_timeout}
   feed:
     page-item-count: ${feed.page_item_count}
   worker:
