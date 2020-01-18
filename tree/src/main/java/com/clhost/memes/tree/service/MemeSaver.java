@@ -26,13 +26,13 @@ import java.util.List;
 public class MemeSaver {
     private static final Logger LOGGER = LogManager.getLogger(MemeSaver.class);
 
-    @Value("${service.minio.bucket_name}")
+    @Value("${service.s3.bucket_name}")
     private String minioBucketName;
 
-    @Value("${service.minio.endpoint}")
+    @Value("${service.s3.endpoint}")
     private String minioEndpoint;
 
-    @Value("${service.minio.port}")
+    @Value("${service.s3.port}")
     private int minioPort;
 
     private final MemesDao dao;

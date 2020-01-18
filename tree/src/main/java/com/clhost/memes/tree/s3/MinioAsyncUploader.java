@@ -21,12 +21,12 @@ public class MinioAsyncUploader {
     private final MinioClient minioClient;
     private final ExecutorService executor;
 
-    @Value("${service.minio.bucket_name}")
+    @Value("${service.s3.bucket_name}")
     private String minioBucketName;
 
     @Autowired
     public MinioAsyncUploader(MinioClient minioClient,
-                              @Value("${service.minio.uploader-workers-count}") int workersCount) {
+                              @Value("${service.s3.upload-workers-count}") int workersCount) {
         this.minioClient = minioClient;
         this.executor = Executors.newFixedThreadPool(workersCount);
     }
