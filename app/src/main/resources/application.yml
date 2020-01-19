@@ -28,6 +28,7 @@ service:
     page-item-count: ${feed.page_item_count}
   worker:
     delay: ${worker.delay}
+    init-delay: ${worker.init.delay}
   vk:
     app_id: ${vk.app_id}
     client_secret: ${vk.client_secret}

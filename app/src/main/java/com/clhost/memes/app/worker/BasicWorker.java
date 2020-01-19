@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 public class BasicWorker {
     private static final Logger LOGGER = LogManager.getLogger(BasicWorker.class);
     private static final String WORK_DELAY_PLACEHOLDER = "${service.worker.delay}";
+    private static final String WORK_INIT_DELAY_PLACEHOLDER = "${service.worker.init-delay}";
 
     private final MemesDao memesDao;
     private final TreeClient treeClient;
@@ -41,7 +42,7 @@ public class BasicWorker {
         this.executor = Executors.newCachedThreadPool();
     }
 
-    @Scheduled(initialDelayString = WORK_DELAY_PLACEHOLDER, fixedDelayString = WORK_DELAY_PLACEHOLDER)
+    @Scheduled(initialDelayString = WORK_INIT_DELAY_PLACEHOLDER, fixedDelayString = WORK_DELAY_PLACEHOLDER)
     public void work() throws ExecutionException, InterruptedException {
         List<SourceData> sources = sourcesProvider.sources();
         if (sources.isEmpty()) {

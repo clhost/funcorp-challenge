@@ -32,13 +32,13 @@ paths:
           description: Bad Request
         500:
           description: Server fault wrapped by ApiFault
-  /feed/{contentId}:
+  /feed/{bucketId}:
     get:
       summary: Возвращает информацию по конкретному мем-бакету
       operationId: contentItem
       parameters:
-        - name: contentId
-          description: Номер страницы ленты
+        - name: bucketId
+          description: Идентификатор мем-бакета
           in: path
           required: true
           type: string
