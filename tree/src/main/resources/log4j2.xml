@@ -4,11 +4,23 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="[%style{%d{ISO8601}}] %-5level [%style{%25.25t}] %-40.40c{1.}: %msg%n%throwable"/>
         </Console>
+        <Console name="Tree" target="SYSTEM_OUT">
+            <PatternLayout pattern="[CID:%X{cid}] [%style{%d{ISO8601}}] %-5level [%style{%25.25t}] %-40.40c{1.}: %msg%n%throwable"/>
+        </Console>
     </Appenders>
 
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>
+        <Logger name="com.clhost.memes.tree.api" level="info" additivity="false">
+            <AppenderRef ref="Tree"/>
+        </Logger>
+        <Logger name="com.clhost.memes.tree.dao" level="info" additivity="false">
+            <AppenderRef ref="Tree"/>
+        </Logger>
+        <Logger name="com.clhost.memes.tree.service" level="info" additivity="false">
+            <AppenderRef ref="Tree"/>
+        </Logger>
     </Loggers>
 </Configuration>

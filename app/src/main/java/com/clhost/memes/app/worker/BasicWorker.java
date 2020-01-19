@@ -7,12 +7,14 @@ import com.clhost.memes.app.tree.MetaMeme;
 import com.clhost.memes.app.tree.TreeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -88,7 +90,8 @@ public class BasicWorker {
 
     private void putAsync(MemeBucket bucket) {
         try {
-            treeClient.putAsync(map(bucket));
+            MDC.put("cid", UUID.randomUUID().toString());
+            treeClient.putAsync(map(bucket), MDC.get("cid"));
         } catch (Exception e) {
             LOGGER.error("Failed to put meme={}, message={}", bucket, e.getMessage());
         }

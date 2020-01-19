@@ -1,8 +1,11 @@
 package com.clhost.memes.tree.api;
 
 import com.clhost.memes.tree.service.MemeHandler;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
@@ -23,7 +26,7 @@ public class TreeController implements TreeApi {
     private final int imageWorkersCount;
     private final MemeHandler memeHandler;
     private final ExecutorService executor;
-    private final ArrayBlockingQueue<MetaMeme> incomingMemes;
+    private final ArrayBlockingQueue<Chunk> incomingMemes;
 
     @Autowired
     public TreeController(MemeHandler memeHandler,
@@ -43,7 +46,7 @@ public class TreeController implements TreeApi {
     @Override
     public void putAsync(@RequestBody @Valid MetaMeme metaMeme) {
         try {
-            incomingMemes.put(metaMeme);
+            incomingMemes.put(new Chunk(metaMeme, MDC.get("cid")));
         } catch (InterruptedException e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -52,11 +55,18 @@ public class TreeController implements TreeApi {
     private void handleMeme() {
         try {
             while (true) {
-                MetaMeme meme = incomingMemes.take();
-                memeHandler.handleMeme(meme);
+                Chunk chunk = incomingMemes.take();
+                MDC.put("cid", chunk.cid);
+                memeHandler.handleMeme(chunk.meme);
             }
         } catch (InterruptedException e) {
             LOGGER.error(e.getMessage(), e);
         }
+    }
+
+    @AllArgsConstructor
+    private static class Chunk {
+        private MetaMeme meme;
+        private String cid;
     }
 }

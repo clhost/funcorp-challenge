@@ -91,7 +91,7 @@ public class MemeHandler {
 
     private void makeDecisionSingle(MetaMeme meme, MemeSaver.MemeShort memeShort) {
         boolean duplicate = metricSpace.isDuplicate(memeShort.hash);
-        LOGGER.debug("The meme {}, duplicated = {}", meme, duplicate);
+        LOGGER.trace("The meme {}, duplicated = {}", meme, duplicate);
         if (duplicate) return;
         saver.save(meme, memeShort.image, memeShort.hash, memeShort.url);
     }
@@ -106,7 +106,7 @@ public class MemeHandler {
         if (percentage <= bucketDuplicateThreshold)
             saver.saveBatch(meme, memeShorts);
         else
-            LOGGER.debug("The meme {}, duplicated = {}", meme, duplicates);
+            LOGGER.trace("The meme {}, duplicated = {}", meme, duplicates);
     }
 
     private static byte[] loadImage(String url) throws IOException {

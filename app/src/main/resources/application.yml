@@ -48,3 +48,4 @@ management:
     export:
       prometheus:
         enabled: true
+logging.level.com.clhost.memes.app.tree.TreeClient: DEBUG

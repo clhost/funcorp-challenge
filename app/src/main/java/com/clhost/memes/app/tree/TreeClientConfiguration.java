@@ -3,6 +3,7 @@ package com.clhost.memes.app.tree;
 import com.netflix.client.config.CommonClientConfigKey;
 import com.netflix.client.config.DefaultClientConfigImpl;
 import com.netflix.client.config.IClientConfig;
+import feign.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,5 +28,15 @@ public class TreeClientConfiguration {
         config.set(CommonClientConfigKey.ReadTimeout, connectionTimeout);
         config.set(CommonClientConfigKey.GZipPayload, true);
         return config;
+    }
+
+    @Bean
+    public Logger.Level level() {
+        return Logger.Level.BASIC;
+    }
+
+    @Bean
+    public Logger feignLogger() {
+        return new FeignLogger();
     }
 }
