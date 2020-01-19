@@ -34,6 +34,7 @@ public class FeedController implements FeedApi {
         try {
             return memesDao.memesPage(pageItemCount, offset(page), lang(lang));
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             throw new ApiFault(e.getMessage());
         }
     }
@@ -43,6 +44,7 @@ public class FeedController implements FeedApi {
         try {
             return memesDao.contentItemInfo(contentId);
         } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
             throw new ApiFault(e.getMessage());
         }
     }

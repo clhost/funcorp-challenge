@@ -1,0 +1,49 @@
+swagger: '2.0'
+info:
+  version: '1.0.0'
+  title: Vantage Point Tree
+  description: |
+    VP-tree: компонент, реализующий принципы метрического пространства для хранения и обработки перцептивных хешей
+paths:
+  /tree/putAsync:
+    post:
+      summary: Добавление метаинформации о сохраняемом меме
+      operationId: putAsync
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/MetaMeme'
+      responses:
+        200:
+          description: Пустое тело сообщения (мем принят на обработку)
+        400:
+          description: Bad Request
+definitions:
+  MetaMeme:
+    type: object
+    required:
+      - lang
+      - source
+      - urls
+    properties:
+      text:
+        type: string
+        description: Какой-либо текст к мем-бакету
+      lang:
+        type: string
+        description: На каком языке мем
+        example: de
+      source:
+        type: string
+        description: Источник, откуда был загружен мем-бакет
+        example: vk:group:germameme
+      urls:
+        type: array
+        items:
+          type: string
+        description: Список урлов на мемы из источника
+        example:
+          - https://sun9-56.userapi.com/c857428/v857428331/150fd4/iEyN0M6dBJ0.jpg
+          - https://sun9-18.userapi.com/c855328/v855328623/1d0a69/w5Zx6pzWPg0.jpg

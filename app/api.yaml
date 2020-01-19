@@ -1,0 +1,136 @@
+swagger: '2.0'
+info:
+  version: '1.0.0'
+  title: Meme Application
+  description: |
+    Meme App: компонент, собирающий мемы с указанных источников и отправляющий их на обработку компоненту VP-tree
+    Так же компонент отдает сохраненные мемы в систему
+paths:
+  /feed:
+    get:
+      summary: Возвращает ленту мем-бакетов
+      operationId: feed
+      parameters:
+        - name: page
+          description: Номер страницы ленты
+          in: query
+          type: integer
+          format: int64
+        - name: lang
+          description: Мем-бакеты какого языка требуется отобразить
+          in: query
+          type: string
+          format: string
+      responses:
+        200:
+          description: Список мем-бакетов, отсортированных по дате сохранения в систему
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PreviewItem'
+        400:
+          description: Bad Request
+        500:
+          description: Server fault wrapped by ApiFault
+  /feed/{contentId}:
+    get:
+      summary: Возвращает информацию по конкретному мем-бакету
+      operationId: contentItem
+      parameters:
+        - name: contentId
+          description: Номер страницы ленты
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Расширенная информация по конкретному мем-бакету
+          schema:
+            $ref: '#/definitions/ContentItem'
+        400:
+          description: Bad Request
+        500:
+          description: Server fault wrapped by ApiFault
+definitions:
+  PreviewItem:
+    type: object
+    required:
+      - id
+      - time
+      - urls
+    properties:
+      id:
+        type: string
+        description: Идентификатор мем-бакета
+        example: 18cb3e2fc97669a5102b5aacf7215c9f4473d141
+      text:
+        type: string
+        description: Какой-либо текст к мем-бакету
+      source:
+        type: string
+        description: Источник, откуда был загружен мем-бакет
+        example: vk:group:germameme
+      urls:
+        type: array
+        items:
+          type: string
+        description: Список урлов на сохраненные мемы, относящиеся к этому бакету
+        example:
+          - localhost:9000/memes-bucket/cfd201567dff66bded7a784f99580ca88494c301
+          - localhost:9000/memes-bucket/a2bc2cda58edacf3bca11b0d0c5f61410cffee3f
+          - localhost:9000/memes-bucket/f9f1e4c20c158e6f426af5d7ee6fd52608c82a74
+  ContentItem:
+    type: object
+    required:
+      - bucketId
+      - lang
+      - source
+      - text
+      - bucketPybDate
+      - items
+    properties:
+      bucketId:
+        type: string
+        description: Идентификатор мем-бакета
+        example: 18cb3e2fc97669a5102b5aacf7215c9f4473d141
+      lang:
+        type: string
+        description: На каком языке мем
+        example: de
+      text:
+        type: string
+        description: Какой-либо текст к мем-бакету
+      source:
+        type: string
+        description: Источник, откуда был загружен мем-бакет
+        example: vk:group:germameme
+      bucketPubDate:
+        type: integer
+        format: int64
+        description: Время сохранения мем-бакета в систему
+        example: 1579428518615
+      urls:
+        type: array
+        items:
+          $ref: '#/definitions/ContentData'
+        description: Список мемов, относящихся к бакету
+  ContentData:
+    type: object
+    required:
+      - contentId
+      - url
+      - contentPubDate
+    properties:
+      contentId:
+        type: string
+        description: Идентификатор отдельной мем-картинки
+        example: 18cb3e2fc97669a5102b5aacf7215c9f4473d141
+      url:
+        type: string
+        description: Урл отдельной сохраненной мем-картинки
+        example: localhost:9000/memes-bucket/cfd201567dff66bded7a784f99580ca88494c301
+      contentPubDate:
+        type: integer
+        format: int64
+        description: Время сохранения мем-картинки в системе
+        example: 1579428518615
